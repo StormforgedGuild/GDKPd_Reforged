@@ -2996,7 +2996,7 @@ end
 
 GDKPd:SetScript("OnEvent", function(self, event, ...)
 	local arg = emptytable(...)
-	if event == "ADDON_LOADED" and arg[1] == "GDKPd" then
+	if event == "ADDON_LOADED" and arg[1] == "GDKPd_Reforged" then
 		self:UnregisterEvent("ADDON_LOADED")
 		local isFirstLogin = not (GDKPd_PotData or GDKPd_BalanceData)
 		GDKPd_PotData = GDKPd_PotData or {history={},potAmount=0}

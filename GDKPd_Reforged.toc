@@ -1,12 +1,12 @@
 ## Interface: 11305
-## Title: GDKPd
+## Title: GDKPd_Reforged
 ## Notes: Simplifies GDKP bidding processes
 ## Author: poptix, Keaarori, stolenlegacy
 ## SavedVariables: GDKPd_DB, GDKPd_PotData, GDKPd_BalanceData
 ## OptionalDeps: LibStub, Ace3, CallbackHandler-1.0
 #@no-lib-strip@
 ## X-Curse-Packaged-Version: 2.0.3 
-## X-Curse-Project-Name: gdkpdclassic 
+## X-Curse-Project-Name: gdkpd_reforged
 ## X-Curse-Project-ID: 397856
 LibStub\LibStub.lua
 CallbackHandler-1.0\CallbackHandler-1.0.xml
@@ -30,4 +30,4 @@ jaJP.localization.lua
 
 # table handler
 TempTables.lua
-GDKPd.lua
+GDKPd_Reforged.lua
