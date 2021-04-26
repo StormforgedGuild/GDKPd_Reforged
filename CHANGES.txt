@@ -1,0 +1,18 @@
+tag 435cec08f62ad501debb2ad0747f979dc385b47a 2.0.4
+Author:	poptix <poptix@gmail.com>
+Date:	Mon Sep 28 12:12:00 2020 -0500
+
+Push
+
+commit 0095cefd2bb9cfd5b4adf12cf355d46ae8d65bcf
+Author: poptix <poptix@gmail.com>
+Date:   Sat Sep 26 03:53:31 2020 -0500
+
+    Fix GetLootSlotInfo return parameters, handle assholes
+
+commit 38b8434512874c9d625e32b6f56b22fce86bee88
+Author: poptix <poptix@gmail.com>
+Date:   Fri Sep 25 19:04:17 2020 -0500
+
+    Ignore obnoxiously large numbers
+
