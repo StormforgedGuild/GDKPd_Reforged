@@ -9,6 +9,7 @@
 ## X-Curse-Project-Name: gdkpd_reforged
 ## X-Curse-Project-ID: 397856
 LibStub\LibStub.lua
+LibDeformat-3.0\LibDeformat-3.0.lua
 CallbackHandler-1.0\CallbackHandler-1.0.xml
 AceDB-3.0\AceDB-3.0.xml
 AceDBOptions-3.0\AceDBOptions-3.0.xml

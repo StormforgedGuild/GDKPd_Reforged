@@ -11,7 +11,10 @@ local UIParent, MailFrame =
 -- Fetch all the different realm separators into a table
 local REALM_SEPARATOR_LIST = {}
 for s in REALM_SEPARATORS:gmatch(".") do tinsert(REALM_SEPARATOR_LIST,s) end
-	  
+
+--Auto loot declarations
+local deformat = LibStub("LibDeformat-3.0");
+
 -- table handling to prevent any memory leakage from accumulating.
 local emptytable = select(2,...).emptytable
 
@@ -371,6 +374,7 @@ GDKPd.curAuctions = {}
 GDKPd.auctionList = {}
 GDKPd.ignoredLinks = {}
 GDKPd.versions = {}
+GDKPd.itemCount = 0 -- # of loot drop, also index of loot that dropped.
 GDKPd:Hide()
 GDKPd:SetScript("OnUpdate", function(self, elapsed)
 	if (not self.curAuction.item) and (not next(self.curAuctions)) then self:Hide() return end
@@ -2009,6 +2013,19 @@ function GDKPd:CancelAuction(link)
 		end
 	end
 end
+
+function GDKPd:AddItemToPot(link, bid, bname)
+	--add item into GDKPd_PotData.curPotHistory here.
+	local itemlink = link
+	local bid1 = bid
+	local name = bname
+	GDKPd_Debug("AddItemToPot: link: " ..itemlink)
+	GDKPd_Debug("AddItemToPot: bid: " ..tostring(bid1))
+	GDKPd_Debug("AddItemToPot: lootername: " ..name)
+	GDKPd.itemCount = GDKPd.itemCount + 1
+	tinsert(GDKPd_PotData.curPotHistory, {item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
+end
+
 function GDKPd:FinishAuction(link)
 	if self.opt.allowMultipleAuctions then
 		-- new code
@@ -2038,7 +2055,10 @@ function GDKPd:FinishAuction(link)
 				if self.opt.announcePotAfterAuction then
 					SendChatMessage("Current pot: "..GDKPd_PotData.potAmount.." gold","RAID")
 				end
-				tinsert(GDKPd_PotData.curPotHistory, {item=link, bid=totalAmount, name=aucdata.bidders[1].bidderName})
+				--This is where we'll want to find and update instead of adding new item.
+				GDKPd_Debug("FinishAuction: link: "..link.." bid: " ..totalAmount.. " aucdata.bidders[1].bidderName: " ..aucdata.bidders[1].bidderName)
+				self:AddItemToPot(link, totalAmount, aucdata.bidders[1].bidderName)
+				--tinsert(GDKPd_PotData.curPotHistory, {item=link, bid=totalAmount, name=aucdata.bidders[1].bidderName})
 				self.status:Update()
 				if self.opt.autoAwardLoot then
 					local bestBidderName = aucdata.bidders[1].bidderName
@@ -2089,7 +2109,14 @@ function GDKPd:FinishAuction(link)
 			if self.opt.announcePotAfterAuction then
 				SendChatMessage("Current pot: "..GDKPd_PotData.potAmount.." gold","RAID")
 			end
-			tinsert(GDKPd_PotData.curPotHistory, {item=self.curAuction.item, bid=totalAmount, name=self.curAuction.bidders[1].bidderName})
+			--using new add method
+			GDKPd_Debug("self.curAuction.bidders: self.curAuction.item: " ..self.curAuction.item.. " totalAmount: " ..totalAmount.. " self.curAuction.bidders[1].bidderName: " ..self.curAuction.bidders[1].bidderName)
+			local aucitem = self.curAuction.item
+			local bidamt = tonumber(totalAmount)
+			local winname = self.curAuction.bidders[1].bidderName
+			GDKPd_Debug("self.curAuction.bidders: aucitem: " ..aucitem.. " bidamt: " ..bidamt.. " winname: " ..winname)
+			self:AddItemToPot(aucitem, bidamt, winname)
+			--tinsert(GDKPd_PotData.curPotHistory, {item=self.curAuction.item, bid=totalAmount, name=self.curAuction.bidders[1].bidderName})
 			self.status:Update()
 			if self.opt.autoAwardLoot then
 				local bestBidderName = self.curAuction.bidders[1].bidderName
@@ -2541,6 +2568,7 @@ local defaults={profile={
 	confirmMailAll=true,
 	confirmMail=false,
 	linkBalancePot=false,
+	debugLog=false,
 }}
 
 GDKPd.options={
@@ -2797,6 +2825,15 @@ GDKPd.options={
 					set=function(info, value) GDKPd.opt.linkBalancePot = value end,
 					get=function() return GDKPd.opt.linkBalancePot end,
 					order=16,
+				},
+				debugLog={
+					type="toggle",
+					name="Debug logging",
+					desc="Turn on debug logging of the addon",
+					width="full",
+					set=function(info, value) GDKPd.opt.debugLog = value end,
+					get=function() return GDKPd.opt.debugLog end,
+					order=17,
 				},
 			},
 			order=1,
@@ -3449,9 +3486,60 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 	if (event == "MAIL_CLOSED") or (event == "MAIL_INBOX_UPDATE") then
 		self.balance:Update()
 	end
+	if (event == "CHAT_MSG_LOOT") then
+        ---do the loot things
+		chatmsg = arg[1]
+		GDKPd_Debug("Loot event received. Processing...");
+		-- patterns LOOT_ITEM / LOOT_ITEM_SELF are also valid for LOOT_ITEM_MULTIPLE / LOOT_ITEM_SELF_MULTIPLE - but not the other way around - try these first
+		-- first try: somebody else received multiple loot (most parameters)
+		local playerName, itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_MULTIPLE);
+		-- next try: somebody else received single loot
+		if (playerName == nil) then
+			itemCount = 1;
+			playerName, itemLink = deformat(chatmsg, LOOT_ITEM);
+		end
+		-- if player == nil, then next try: player received multiple loot
+		if (playerName == nil) then
+			playerName = UnitName("player");
+			itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_SELF_MULTIPLE);
+		end
+		-- if itemLink == nil, then last try: player received single loot
+		if (itemLink == nil) then
+			itemCount = 1;
+			itemLink = deformat(chatmsg, LOOT_ITEM_SELF);
+		end
+		-- if itemLink == nil, then there was neither a LOOT_ITEM, nor a LOOT_ITEM_SELF message
+		if (itemLink == nil) then
+			-- MRT_Debug("No valid loot event received.");
+			return;
+		end
+		-- if code reaches this point, we should have a valid looter and a valid itemLink
+		-- SF: hack to assign to disenchanted playerName = "disenchanted";
+		GDKPd_Debug("Item looted - Looter is "..playerName.." and loot is "..itemLink);
+		--cache the item
+		local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(itemLink);
+		--if itemRarity is green (2) or better add
+		--if 1 < itemRarity then 
+		if itemRarity then 
+			GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName)
+			self:AddItemToPot(itemLink, 0, playerName)
+		else
+			GDKPd_Debug("Item Rarity is too low to track")
+		end
+	end
 	-- release table back into the pool of usable tables
 	arg:Release()
 end)
+
+function MRT_GetDetailedItemInformation(itemIdentifier)
+    local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice, itemClassID, itemSubClassID = GetItemInfo(itemIdentifier);
+    if (not itemLink) then return nil; end
+    local _, itemString, _ = deformat(itemLink, "|c%s|H%s|h%s|h|r");
+    local itemId, _ = deformat(itemString, "item:%d:%s");
+    local itemColor = MRT_ItemColors[itemRarity + 1];
+    return itemName, itemLink, itemId, itemString, itemRarity, itemColor, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice, itemClassID, itemSubClassID;
+end
+
 GDKPd:RegisterEvent("ADDON_LOADED")
 GDKPd:RegisterEvent("CHAT_MSG_RAID")
 GDKPd:RegisterEvent("CHAT_MSG_RAID_LEADER")
@@ -3472,6 +3560,8 @@ GDKPd:RegisterEvent("PLAYER_REGEN_ENABLED")
 GDKPd:RegisterEvent("PLAYER_REGEN_DISABLED")
 GDKPd:RegisterEvent("MAIL_INBOX_UPDATE")
 GDKPd:RegisterEvent("MAIL_CLOSED")
+--Loot events
+GDKPd:RegisterEvent("CHAT_MSG_LOOT")
 
 --chat filters
 local function filterChat_CHAT_MSG_RAID(chatframe,event,msg)
@@ -3539,3 +3629,13 @@ C_ChatInfo.RegisterAddonMessagePrefix("GDKPD VREQ")
 C_ChatInfo.RegisterAddonMessagePrefix("GDKPD VDATA")
 C_ChatInfo.RegisterAddonMessagePrefix("GDKPD MANADJ")
 --prefixes done
+
+------------------------
+--  helper functions  --
+------------------------
+function GDKPd_Debug(text)
+
+	if GDKPd.opt.debugLog then
+	    DEFAULT_CHAT_FRAME:AddMessage("GDKPd: Debug: "..text, 1, 0.5, 0);
+    end
+end
