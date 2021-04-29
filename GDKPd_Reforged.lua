@@ -2858,8 +2858,8 @@ GDKPd.options={
 						return vtab
 					end,
 					name="Item Drop Quality to track",
-					set=function(info, value) GDKPd.opt.minQuality = value end,
-					get=function() return GDKPd.opt.minQuality end,
+					set=function(info, value) GDKPd.opt.minQualityTracking = value end,
+					get=function() return GDKPd.opt.minQualityTracking end,
 					order=19,
 				},
 			},
