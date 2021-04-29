@@ -2569,6 +2569,8 @@ local defaults={profile={
 	confirmMail=false,
 	linkBalancePot=false,
 	debugLog=false,
+	autoLootTracking = true,
+	minQualityTracking=3,
 }}
 
 GDKPd.options={
@@ -2834,6 +2836,31 @@ GDKPd.options={
 					set=function(info, value) GDKPd.opt.debugLog = value end,
 					get=function() return GDKPd.opt.debugLog end,
 					order=17,
+				},
+				autoLootTracking={
+					type="toggle",
+					name="Auto Loot Tracking",
+					desc="Turn on to auto track loot",
+					width="full",
+					set=function(info, value) GDKPd.opt.autoLootTracking = value end,
+					get=function() return GDKPd.opt.autoLootTracking end,
+					order=18,
+				},
+				minQualityTracking={
+					type="select",
+					values=function()
+						local vtab={}
+						for key, tab in pairs(ITEM_QUALITY_COLORS) do
+							if _G["ITEM_QUALITY"..key.."_DESC"] then
+								vtab[key] = tab.hex.._G["ITEM_QUALITY"..key.."_DESC"].."|r"
+							end
+						end
+						return vtab
+					end,
+					name="Item Drop Quality to track",
+					set=function(info, value) GDKPd.opt.minQuality = value end,
+					get=function() return GDKPd.opt.minQuality end,
+					order=19,
 				},
 			},
 			order=1,
@@ -3487,44 +3514,45 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 		self.balance:Update()
 	end
 	if (event == "CHAT_MSG_LOOT") then
-        ---do the loot things
-		chatmsg = arg[1]
-		GDKPd_Debug("Loot event received. Processing...");
-		-- patterns LOOT_ITEM / LOOT_ITEM_SELF are also valid for LOOT_ITEM_MULTIPLE / LOOT_ITEM_SELF_MULTIPLE - but not the other way around - try these first
-		-- first try: somebody else received multiple loot (most parameters)
-		local playerName, itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_MULTIPLE);
-		-- next try: somebody else received single loot
-		if (playerName == nil) then
-			itemCount = 1;
-			playerName, itemLink = deformat(chatmsg, LOOT_ITEM);
-		end
-		-- if player == nil, then next try: player received multiple loot
-		if (playerName == nil) then
-			playerName = UnitName("player");
-			itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_SELF_MULTIPLE);
-		end
-		-- if itemLink == nil, then last try: player received single loot
-		if (itemLink == nil) then
-			itemCount = 1;
-			itemLink = deformat(chatmsg, LOOT_ITEM_SELF);
-		end
-		-- if itemLink == nil, then there was neither a LOOT_ITEM, nor a LOOT_ITEM_SELF message
-		if (itemLink == nil) then
-			-- MRT_Debug("No valid loot event received.");
-			return;
-		end
-		-- if code reaches this point, we should have a valid looter and a valid itemLink
-		-- SF: hack to assign to disenchanted playerName = "disenchanted";
-		GDKPd_Debug("Item looted - Looter is "..playerName.." and loot is "..itemLink);
-		--cache the item
-		local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(itemLink);
-		--if itemRarity is green (2) or better add
-		--if 1 < itemRarity then 
-		if itemRarity then 
-			GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName)
-			self:AddItemToPot(itemLink, 0, playerName)
-		else
-			GDKPd_Debug("Item Rarity is too low to track")
+        if GDKpd.opt.autoLootTracking then 
+			chatmsg = arg[1]
+			GDKPd_Debug("Loot event received. Processing...");
+			-- patterns LOOT_ITEM / LOOT_ITEM_SELF are also valid for LOOT_ITEM_MULTIPLE / LOOT_ITEM_SELF_MULTIPLE - but not the other way around - try these first
+			-- first try: somebody else received multiple loot (most parameters)
+			local playerName, itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_MULTIPLE);
+			-- next try: somebody else received single loot
+			if (playerName == nil) then
+				itemCount = 1;
+				playerName, itemLink = deformat(chatmsg, LOOT_ITEM);
+			end
+			-- if player == nil, then next try: player received multiple loot
+			if (playerName == nil) then
+				playerName = UnitName("player");
+				itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_SELF_MULTIPLE);
+			end
+			-- if itemLink == nil, then last try: player received single loot
+			if (itemLink == nil) then
+				itemCount = 1;
+				itemLink = deformat(chatmsg, LOOT_ITEM_SELF);
+			end
+			-- if itemLink == nil, then there was neither a LOOT_ITEM, nor a LOOT_ITEM_SELF message
+			if (itemLink == nil) then
+				-- MRT_Debug("No valid loot event received.");
+				return;
+			end
+			-- if code reaches this point, we should have a valid looter and a valid itemLink
+			-- SF: hack to assign to disenchanted playerName = "disenchanted";
+			GDKPd_Debug("Item looted - Looter is "..playerName.." and loot is "..itemLink);
+			--cache the item
+			local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(itemLink);
+			--if itemRarity is green (2) or better add
+			--if 1 < itemRarity then 
+			if GDKPd.opt.minQualityTracking < itemRarity then 
+				GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName)
+				self:AddItemToPot(itemLink, 0, playerName)
+			else
+				GDKPd_Debug("Item Rarity is too low to track")
+			end
 		end
 	end
 	-- release table back into the pool of usable tables
