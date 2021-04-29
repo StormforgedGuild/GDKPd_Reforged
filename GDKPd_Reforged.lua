@@ -3514,7 +3514,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 		self.balance:Update()
 	end
 	if (event == "CHAT_MSG_LOOT") then
-        if GDKpd.opt.autoLootTracking then 
+        if GDKPd.opt.autoLootTracking then 
 			chatmsg = arg[1]
 			GDKPd_Debug("Loot event received. Processing...");
 			-- patterns LOOT_ITEM / LOOT_ITEM_SELF are also valid for LOOT_ITEM_MULTIPLE / LOOT_ITEM_SELF_MULTIPLE - but not the other way around - try these first
