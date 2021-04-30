@@ -3818,8 +3818,8 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(itemLink);
 			--if itemRarity is green (2) or better add
 			--if 1 < itemRarity then 
-			if GDKPd.opt.minQualityTracking < itemRarity then 
-				GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName)
+			GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName.. " itemRarity: " ..itemRarity.. " GDKPd.opt.minQualityTracking: " ..GDKPd.opt.minQualityTracking)
+			if GDKPd.opt.minQualityTracking <= itemRarity then 
 				self:AddItemToPot(itemLink, 0, playerName)
 			else
 				GDKPd_Debug("Item Rarity is too low to track")
@@ -3836,9 +3836,19 @@ function MRT_GetDetailedItemInformation(itemIdentifier)
     if (not itemLink) then return nil; end
     local _, itemString, _ = deformat(itemLink, "|c%s|H%s|h%s|h|r");
     local itemId, _ = deformat(itemString, "item:%d:%s");
-    local itemColor = MRT_itemColors[itemRarity + 1];
+    local itemColor = MRT_ItemColors[itemRarity + 1];
     return itemName, itemLink, itemId, itemString, itemRarity, itemColor, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice, itemClassID, itemSubClassID;
 end
+MRT_ItemColors = {
+    [1] = "ff9d9d9d",  -- poor
+    [2] = "ffffffff",  -- common
+    [3] = "ff1eff00",  -- uncommon
+    [4] = "ff0070dd",  -- rare
+    [5] = "ffa335ee",  -- epic
+    [6] = "ffff8000",  -- legendary
+    [7] = "ffe6cc80",  -- artifact / heirloom
+    [8] = "ffe6cc80",
+}
 
 GDKPd:RegisterEvent("ADDON_LOADED")
 GDKPd:RegisterEvent("CHAT_MSG_RAID")
