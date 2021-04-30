@@ -15,6 +15,10 @@ for s in REALM_SEPARATORS:gmatch(".") do tinsert(REALM_SEPARATOR_LIST,s) end
 --Auto loot declarations
 local deformat = LibStub("LibDeformat-3.0");
 
+--MRT IMPORTS
+local ScrollingTable = LibStub("ScrollingTable");
+
+	  
 -- table handling to prevent any memory leakage from accumulating.
 local emptytable = select(2,...).emptytable
 
@@ -436,9 +440,13 @@ anchor.movetx.text = anchor:CreateFontString()
 anchor.movetx.text:SetFontObject(GameFontHighlightLarge)
 anchor.movetx.text:SetText(L["GDKPd: Drag to move\n/gdkpd and check \"Lock\" to hide"])
 anchor.movetx.text:SetAllPoints()
+
+-------------------------------------------------------------------------------------------
+-- STATUS FRAME
+-------------------------------------------------------------------------------------------
 GDKPd.status = CreateFrame("Frame", "GDKPd_Status", UIParent)
 local status = GDKPd.status
-status:SetSize(200, 90)
+status:SetSize(605, 550)
 status:Hide()
 status:SetBackdrop({
 	bgFile="Interface\\DialogFrame\\UI-DialogBox-Gold-Background",
@@ -464,12 +472,14 @@ function status:UpdateVisibility(forceCombat)
 		self:Hide()
 	end
 end
+
+--HEADER
 status.header = CreateFrame("Button", nil, status)
 status.header:SetNormalTexture("Interface\\DialogFrame\\UI-DialogBox-Gold-Header")
-status.header:SetSize(133,34)
+status.header:SetSize(180,50)
 status.header.text = status.header:CreateFontString()
-status.header.text:SetPoint("TOP",0,-7)
-status.header.text:SetFont("Fonts\\FRIZQT__.TTF", 8, "")
+status.header.text:SetPoint("TOP",0,-9)
+status.header.text:SetFont("Fonts\\FRIZQT__.TTF", 14, "")
 status.header.text:SetTextColor(1,1,1)
 status.header.text:SetText("GDKPd")
 status.header:SetMovable(true)
@@ -484,28 +494,242 @@ status:SetPoint("TOP", status.header, "TOP", 0, -6)
 status:SetScript("OnShow", function(self)
 	self:UpdateSize()
 end)
-status.text = status:CreateFontString()
-status.text:SetFont("Fonts\\FRIZQT__.TTF", 8, "")
-status.text:SetTextColor(1,1,1)
-status.text:SetPoint("TOPLEFT", 15, -15)
-status.text:SetJustifyH("LEFT")
-status.distribute = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.distribute:SetSize(65, 15)
-status.distribute:SetPoint("TOPLEFT", status.text, "BOTTOMLEFT", 0, -5)
-status.distribute:SetText(L["Distribute"])
-status.distribute:SetScript("OnClick", function(self)
-	GDKPd:DistributePot()
-end)
+
+--BOSS LOOT TABLE
+local MRT_BossLootTableColDef = {
+    {["name"] = "", ["width"] = 1},                            -- invisible column for storing the loot number index from the raidlog-table
+    {                                                          -- coloumn for Item Icon - need to store ID
+        ["name"] = "Icon",
+        ["width"] = 30,
+      --  ["DoCellUpdate"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, fShow, self, ...)
+            -- icon handling
+        --    if fShow then
+                --MRT_Debug("self:GetCell(realrow, column) = "..self:GetCell(realrow, column));
+           --     local itemId = self:GetCell(realrow, column);
+           --     local itemTexture = GetItemIcon(itemId);
+                --cellFrame:SetBackdrop( { bgFile = itemTexture } );            -- put this back in, if and when SetBackdrop can handle texture IDs
+    --           if not (cellFrame.cellItemTexture) then
+      --              cellFrame.cellItemTexture = cellFrame:CreateTexture();
+     --           end
+     --           cellFrame.cellItemTexture:SetTexture(itemTexture);
+     --           cellFrame.cellItemTexture:SetTexCoord(0, 1, 0, 1);
+    --            cellFrame.cellItemTexture:Show();
+    --            cellFrame.cellItemTexture:SetPoint("CENTER", cellFrame.cellItemTexture:GetParent(), "CENTER");
+     --           cellFrame.cellItemTexture:SetWidth(30);
+     --           cellFrame.cellItemTexture:SetHeight(30);
+    --        end
+            -- tooltip handling
+        --    local itemLink = self:GetCell(realrow, 6);
+     --       cellFrame:SetScript("OnEnter", function()
+    --                                         MRT_GUI_ItemTT:SetOwner(cellFrame, "ANCHOR_RIGHT");
+    --                                         MRT_GUI_ItemTT:SetHyperlink(itemLink);
+      --                                       MRT_GUI_ItemTT:Show();
+     --                                      end);
+     --       cellFrame:SetScript("OnLeave", function()
+     --                                        MRT_GUI_ItemTT:Hide();
+      --                                       MRT_GUI_ItemTT:SetOwner(UIParent, "ANCHOR_NONE");
+      --                                     end);
+     --   end,
+    },
+    {["name"] = "Name", ["width"] = 120},
+    {["name"] = "Looter", ["width"] = 85},
+    {["name"] = "Price", ["width"] = 45},
+    {["name"] = "", ["width"] = 1},                            -- invisible column for itemString (needed for tooltip)
+    {["name"] = "Time", ["width"] = 45},
+    {                                                          -- col for OffSpec
+    ["name"] = "Done", 
+    ["width"] = 30,
+ --   ["DoCellUpdate"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, fShow, self, ...)
+--    end,
+    },                  
+};
+
+MRT_GUI_BossLootTable = ScrollingTable:CreateST(MRT_BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
+MRT_GUI_BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
+MRT_GUI_BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -75);
+MRT_GUI_BossLootTable:EnableSelection(true);
+
+--BOSS LOOT FILTER
+status.lootFilter = CreateFrame("EditBox", nil, status, "InputBoxTemplate")
+status.lootFilter:SetSize(100, 30)
+status.lootFilter:SetAutoFocus(false) -- dont automatically focus
+status.lootFilter:SetFontObject("ChatFontNormal")
+status.lootFilter:SetPoint("TOPLEFT", status, "TOPLEFT", 210, -25);
+
+--ADD LOOT BUTTON
+status.addLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.addLoot:SetSize(22, 22)
+status.addLoot:SetPoint("LEFT", status.distribute, "RIGHT")
+status.addLootFont = status.addLoot:CreateFontString()
+status.addLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
+status.addLootFont:SetText("+")
+status.addLoot:SetFontString(status.addLootFont)
+status.addLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 315, -28);
+
+--REMOVE LOOT BUTTON
+status.removeLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.removeLoot:SetSize(22, 22)
+status.removeLoot:SetPoint("LEFT", status.distribute, "RIGHT")
+status.removeLootFont = status.removeLoot:CreateFontString()
+status.removeLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
+status.removeLootFont:SetText("-")
+status.removeLoot:SetFontString(status.removeLootFont)
+status.removeLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 337, -28);
+
+--EDIT LOOT BUTTON
+status.editLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.editLoot:SetSize(50, 22)
+status.editLoot:SetPoint("LEFT", status.distribute, "RIGHT")
+status.editLootFont = status.editLoot:CreateFontString()
+status.editLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
+status.editLootFont:SetText("Edit")
+status.editLoot:SetFontString(status.editLootFont)
+status.editLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 360, -28);
+
+--LINK LOOT BUTTON
+status.linkLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.linkLoot:SetSize(50, 22)
+status.linkLoot:SetPoint("LEFT", status.distribute, "RIGHT")
+status.linkLootFont = status.linkLoot:CreateFontString()
+status.linkLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
+status.linkLootFont:SetText("Link")
+status.linkLoot:SetFontString(status.linkLootFont)
+status.linkLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 411, -28);
+
+--BID LOOT BUTTON
+status.bidLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.bidLoot:SetSize(50, 22)
+status.bidLoot:SetPoint("LEFT", status.distribute, "RIGHT")
+status.bidLootFont = status.bidLoot:CreateFontString()
+status.bidLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
+status.bidLootFont:SetText("Bid")
+status.bidLoot:SetFontString(status.bidLootFont)
+status.bidLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 462, -28);
+
+--TRADE LOOT BUTTON
+status.tradeLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.tradeLoot:SetSize(50, 22)
+status.tradeLoot:SetPoint("LEFT", status.distribute, "RIGHT")
+status.tradeLootFont = status.tradeLoot:CreateFontString()
+status.tradeLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
+status.tradeLootFont:SetText("Trade")
+status.tradeLoot:SetFontString(status.tradeLootFont)
+status.tradeLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 512, -28);
+
+--LOOT LINE
+status.lootLine = status:CreateLine()
+print(l)
+status.lootLine :SetThickness(1)
+status.lootLine :SetColorTexture(235,231,223,.5)
+status.lootLine :SetStartPoint("TOPLEFT",205,-55)
+status.lootLine :SetEndPoint("TOPLEFT",585,-55)
+
+--NEW POT
 status.reset = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.reset:SetSize(65, 15)
-status.reset:SetPoint("LEFT", status.distribute, "RIGHT")
-status.reset:SetText(RESET)
+status.reset:SetSize(75, 22)
+status.reset:SetPoint("LEFT", status, "TOPLEFT", 15, -30)
+status.reset:SetText("New Pot")
 status.reset:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_RESETPOT")
 end)
-status.add = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+
+--REMOVE POT
+status.removePot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.removePot:SetSize(22, 22)
+status.removePot:SetPoint("LEFT", status.reset, "RIGHT")
+status.removePot:SetText("-")
+status.removePot:SetScript("OnClick", function(self)
+--	StaticPopup_Show("GDKPD_RESETPOT")
+end)
+
+--OPTIONS
+status.text = status:CreateFontString()
+status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.text:SetTextColor(1,1,1)
+status.text:SetPoint("TOPLEFT", 15, -15)
+status.text:SetJustifyH("LEFT")
+status.options = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.options:SetSize(75, 22)
+status.options:SetPoint("LEFT", status.removePot, "RIGHT")
+status.options:SetText("Options")
+status.options:SetScript("OnClick", function(self)
+	--StaticPopup_Show("GDKPD_RESETPOT")
+end)
+
+--RAID LOG TABLE
+local MRT_RaidLogTableColDef = {
+    {["name"] = "Date", ["width"] = 75},
+    {["name"] = "Name", ["width"] = 65},
+};
+
+MRT_GUI_AttendeesTable = ScrollingTable:CreateST(MRT_RaidLogTableColDef, 4, nil, nil, status);           
+MRT_GUI_AttendeesTable.head:SetHeight(15);                                                                    
+MRT_GUI_AttendeesTable.frame:SetPoint("TOPLEFT", status.reset, "TOPLEFT", 0, -45);
+MRT_GUI_AttendeesTable:EnableSelection(true);
+
+-- LINE BELOW POT LIST
+local l = status:CreateLine()
+print(l)
+l:SetThickness(1)
+l:SetColorTexture(235,231,223,.5)
+l:SetStartPoint("TOPLEFT",20,-140)
+l:SetEndPoint("TOPLEFT",185,-140)
+
+-- POT FROM ITEMS
+status.potItemsLabel = status:CreateFontString()
+status.potItemsLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.potItemsLabel:SetTextColor(1,1,1)
+status.potItemsLabel:SetPoint("TOPLEFT", MRT_GUI_AttendeesTable.frame, "TOPLEFT", 05, -88)
+status.potItemsLabel:SetJustifyH("LEFT")
+status.potItemsLabel:SetText("Item Spend:")
+
+status.potItemsAmount = status:CreateFontString()
+status.potItemsAmount:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.potItemsAmount:SetTextColor(1,1,1)
+status.potItemsAmount:SetPoint("LEFT", status.potItemsLabel, "RIGHT", 15, 0)
+status.potItemsAmount:SetJustifyH("LEFT")
+status.potItemsAmount:SetText("10000g")
+
+-- POT ADJUST
+status.potAdjustLabel = status:CreateFontString()
+status.potAdjustLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.potAdjustLabel:SetTextColor(1,1,1)
+status.potAdjustLabel:SetPoint("TOPLEFT", status.potItemsLabel, "BOTTOMLEFT", 0, -10)
+status.potAdjustLabel:SetJustifyH("LEFT")
+status.potAdjustLabel:SetText("Pot Adjust:")
+
+status.potAdjustBox = CreateFrame("EditBox", nil, status, "InputBoxTemplate")
+status.potAdjustBox:SetSize(75, 30)
+status.potAdjustBox:SetAutoFocus(false) -- dont automatically focus
+status.potAdjustBox:SetFontObject("ChatFontNormal")
+status.potAdjustBox:SetPoint("LEFT", status.potAdjustLabel, "RIGHT", 10, 0);
+
+-- POT TOTAL
+status.potText = status:CreateFontString()
+status.potText:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.potText:SetTextColor(1,1,1)
+status.potText:SetPoint("TOPLEFT", status.potAdjustLabel, "BOTTOMLEFT", 0, -10)
+status.potText:SetJustifyH("LEFT")
+status.potText:SetText(L["You have looted a monster!\nDo you want GDKPd to announce loot?"])
+
+status.potDistributeText = status:CreateFontString()
+status.potDistributeText:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.potDistributeText:SetTextColor(1,1,1)
+status.potDistributeText:SetPoint("TOPLEFT", status.potText, "BOTTOMLEFT", 0, -10)
+status.potDistributeText:SetJustifyH("LEFT")
+
+-- LINE ABOVE ATTENDEE LIST
+local l = status:CreateLine()
+print(l)
+l:SetThickness(1)
+l:SetColorTexture(235,231,223,.5)
+l:SetStartPoint("TOPLEFT",20,-240)
+l:SetEndPoint("TOPLEFT",185,-240)
+
+-- ADD/ REMOVE GOLD
+--[[status.add = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.add:SetSize(15,15)
-status.add:SetPoint("LEFT", status.reset, "RIGHT",10,0)
+status.add:SetPoint("LEFT", status, "TOPLEFT",10,-200)
 status.add:SetText("+")
 status.add:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_ADDTOPOT")
@@ -517,10 +741,13 @@ status.rem:SetText("-")
 status.rem:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_REMFROMPOT")
 end)
+--]]
+
+--POST RULES
 status.rules = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.rules:SetSize(170, 15)
-status.rules:SetPoint("TOPLEFT", status.distribute, "BOTTOMLEFT")
-status.rules:SetText(L["Broadcast rules"])
+status.rules:SetSize(90, 22)
+status.rules:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 245)
+status.rules:SetText("Post rules")
 status.rules:SetScript("OnClick",function()
 	local announceStrings = emptytable("")
 	for line in string.gmatch(GDKPd.opt.rulesString,"[^\n]+") do
@@ -544,7 +771,34 @@ status.rules:SetScript("OnClick",function()
 end)
 status.rules:Disable()
 
-status.itemhistory = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+--DISTRIBUTE 
+status.text = status:CreateFontString()
+status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.text:SetTextColor(1,1,1)
+--status.text:SetPoint("TOPLEFT", 15, -15)
+status.text:SetJustifyH("LEFT")
+status.distribute = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.distribute:SetSize(80, 22)
+status.distribute:SetPoint("LEFT", status.rules, "RIGHT")
+status.distribute:SetText("Distribute")
+status.distribute:SetScript("OnClick", function(self)
+	GDKPd:DistributePot()
+end)
+
+--ATTENDEES TABLE
+local MRT_RaidAttendeesTableColDef = {
+    {["name"] = "", ["width"] = 1},                            -- invisible column for storing the player number index from the raidlog-table
+    {["name"] = "Name", ["width"] = 100},
+    {["name"] = "$$$", ["width"] = 40},
+};
+
+MRT_GUI_AttendeesTable = ScrollingTable:CreateST(MRT_RaidAttendeesTableColDef,18, 10, nil, status);           
+MRT_GUI_AttendeesTable.head:SetHeight(15);                                                                    
+MRT_GUI_AttendeesTable.frame:SetPoint("TOPLEFT", status.rules, "BOTTOMLEFT", 0 , -20);
+MRT_GUI_AttendeesTable:EnableSelection(true);
+
+--SHOW AUCTION HISTORY
+--[[status.itemhistory = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.itemhistory:SetSize(170, 15)
 status.itemhistory:SetPoint("TOPLEFT", status.rules, "BOTTOMLEFT")
 status.itemhistory:SetText(L["Auction history"])
@@ -569,6 +823,9 @@ end)
 status.itemhistory:SetScript("OnClick", function()
 	GDKPd.history:Show()
 end)
+--]]
+
+--ANNOUCE - LEGACY
 status.announcetext = status:CreateFontString()
 status.announcetext:SetFont("Fonts\\FRIZQT__.TTF", 8, "")
 status.announcetext:SetTextColor(1,1,1)
@@ -615,7 +872,7 @@ status.noannounce:SetScript("OnClick", function(self)
 end)
 status.noannounce:Hide()
 function status:UpdateSize()
-	local height = 80 
+	local height = 480
 	height = height+status.text:GetHeight()
 	if status.announcetext:IsShown() then
 		height=height+status.announcetext:GetHeight()+5
@@ -635,12 +892,18 @@ function status:Update()
 	local potAmount = (GDKPd_PotData.potAmount or 0)
 	local lastDist = (GDKPd_PotData.prevDist or 0)
 	if lastDist > 0 then
-		self.text:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount)..L[" |cffaa0000(Distribute: %dg)|r"]:format(potAmount-lastDist))
+		self.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
+		self.potDistributeText:SetText(L[" |cffaa0000(Distribute: %dg)|r"]:format(potAmount-lastDist))
+
 	else
-		self.text:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
+		self.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
 	end
 	self:UpdateSize()
 end
+
+--------------------------------------------------------------------
+--- HISTORY FRAME
+--------------------------------------------------------------------
 GDKPd.history = CreateFrame("Frame", "GDKPd_History", UIParent)
 local history = GDKPd.history
 history:SetSize(200,95)
