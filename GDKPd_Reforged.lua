@@ -504,35 +504,35 @@ local BossLootTableColDef = {
     {                                                          -- coloumn for Item Icon - need to store ID
         ["name"] = "Icon",
         ["width"] = 30,
-      --  ["DoCellUpdate"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, fShow, self, ...)
+        ["DoCellUpdate"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, fShow, self, ...)
             -- icon handling
-        --    if fShow then
+            if fShow then
                 --GDKPd_Debug("self:GetCell(realrow, column) = "..self:GetCell(realrow, column));
-           --     local itemId = self:GetCell(realrow, column);
-           --     local itemTexture = GetItemIcon(itemId);
-                --cellFrame:SetBackdrop( { bgFile = itemTexture } );            -- put this back in, if and when SetBackdrop can handle texture IDs
-    --           if not (cellFrame.cellItemTexture) then
-      --              cellFrame.cellItemTexture = cellFrame:CreateTexture();
-     --           end
-     --           cellFrame.cellItemTexture:SetTexture(itemTexture);
-     --           cellFrame.cellItemTexture:SetTexCoord(0, 1, 0, 1);
-    --            cellFrame.cellItemTexture:Show();
-    --            cellFrame.cellItemTexture:SetPoint("CENTER", cellFrame.cellItemTexture:GetParent(), "CENTER");
-     --           cellFrame.cellItemTexture:SetWidth(30);
-     --           cellFrame.cellItemTexture:SetHeight(30);
-    --        end
+                local itemId = self:GetCell(realrow, column);
+                local itemTexture = GetItemIcon(itemId);
+                cellFrame:SetBackdrop( { bgFile = itemTexture } );            -- put this back in, if and when SetBackdrop can handle texture IDs
+               if not (cellFrame.cellItemTexture) then
+                    cellFrame.cellItemTexture = cellFrame:CreateTexture();
+                end
+                cellFrame.cellItemTexture:SetTexture(itemTexture);
+                cellFrame.cellItemTexture:SetTexCoord(0, 1, 0, 1);
+                cellFrame.cellItemTexture:Show();
+                cellFrame.cellItemTexture:SetPoint("CENTER", cellFrame.cellItemTexture:GetParent(), "CENTER");
+                cellFrame.cellItemTexture:SetWidth(30);
+                cellFrame.cellItemTexture:SetHeight(30);
+            end
             -- tooltip handling
-        --    local itemLink = self:GetCell(realrow, 6);
-     --       cellFrame:SetScript("OnEnter", function()
-    --                                         MRT_GUI_ItemTT:SetOwner(cellFrame, "ANCHOR_RIGHT");
-    --                                         MRT_GUI_ItemTT:SetHyperlink(itemLink);
-      --                                       MRT_GUI_ItemTT:Show();
-     --                                      end);
-     --       cellFrame:SetScript("OnLeave", function()
-     --                                        MRT_GUI_ItemTT:Hide();
-      --                                       MRT_GUI_ItemTT:SetOwner(UIParent, "ANCHOR_NONE");
-      --                                     end);
-     --   end,
+            local itemLink = self:GetCell(realrow, 6);
+            cellFrame:SetScript("OnEnter", function()
+                                             MRT_GUI_ItemTT:SetOwner(cellFrame, "ANCHOR_RIGHT");
+                                             MRT_GUI_ItemTT:SetHyperlink(itemLink);
+                                             MRT_GUI_ItemTT:Show();
+                                           end);
+            cellFrame:SetScript("OnLeave", function()
+                                             MRT_GUI_ItemTT:Hide();
+                                             MRT_GUI_ItemTT:SetOwner(UIParent, "ANCHOR_NONE");
+                                           end);
+        end,
     },
     {["name"] = "Name", ["width"] = 120},
     {["name"] = "Looter", ["width"] = 85},
@@ -2289,9 +2289,10 @@ function GDKPd:AddItemToPot(link, bid, bname)
 	GDKPd_Debug("AddItemToPot: bid: " ..tostring(bid1))
 	GDKPd_Debug("AddItemToPot: lootername: " ..name)
 	GDKPd.itemCount = GDKPd.itemCount + 1
-	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(itemLink);
+	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(link);
 
 	tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
+	BossLootTableUpdate()
 end
 
 function GDKPd:FinishAuction(link)
@@ -3386,6 +3387,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			else
 				--LibStub("AceConfigDialog-3.0"):Open("GDKPd")
 				self.status:Show();
+				BossLootTableUpdate();
 			end
 		end
 		SLASH_GDKPD1 = "/gdkpd"
@@ -3829,11 +3831,12 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 end)
 
 function MRT_GetDetailedItemInformation(itemIdentifier)
+	GDKPd_Debug("GetDetailedItemInformation: itemIdentifier: " ..itemIdentifier)
     local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice, itemClassID, itemSubClassID = GetItemInfo(itemIdentifier);
     if (not itemLink) then return nil; end
     local _, itemString, _ = deformat(itemLink, "|c%s|H%s|h%s|h|r");
     local itemId, _ = deformat(itemString, "item:%d:%s");
-    local itemColor = MRT_ItemColors[itemRarity + 1];
+    local itemColor = MRT_itemColors[itemRarity + 1];
     return itemName, itemLink, itemId, itemString, itemRarity, itemColor, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice, itemClassID, itemSubClassID;
 end
 
@@ -3936,8 +3939,6 @@ function BossLootTableUpdate(skipsort, filter)
     local raidnum;
     local indexofsub1;
     local indexofsub2;
-
-    
     
         local index = 1;
         local checkFilter
@@ -3951,28 +3952,28 @@ function BossLootTableUpdate(skipsort, filter)
         end
          
         for i, v in ipairs(GDKPd_PotData.curPotHistory) do
-            --BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", v["Looter"], v["DKPValue"], v["ItemLink"], v["Note"]};
+            --BossLootTableData[index] = {i, v["ItemId"], "|c"..v["itemColor"]..v["itemName"].."|r", v["Looter"], v["DKPValue"], v["ItemLink"], v["Note"]};
             -- SF: if unassigned, make it red.
             
             --Set Class Color
             classColor = "ff9d9d9d";
             local playerClass = getPlayerClass(v["name"]);   
             classColor = getClassColor(playerClass);  
-            --GDKPd_Debug("Row: "..v["ItemName"])
+            --GDKPd_Debug("Row: "..v["itemName"])
            --GDKPd_Debug("BossLootTableUpdate: elseif raidnum condition: looter: " ..v["Looter"] .."playerClass: "..playerClass..", classColor: " ..classColor);
             
             --GetDate 
             loottime = calculateLootTimeLeft(v["ltime"])
 
             --SetDoneState
-            --local doneState = SetDoneState(v["Looter"], v["Traded"], v["ItemName"])
+            --local doneState = SetDoneState(v["Looter"], v["Traded"], v["itemName"])
 
             if not hasFilter then
                 --GDKPd_Debug("BossLootTableUpdate: hasFilter: " ..tostring(hasFilter) .." false, so do regular stuff");
                 if v["Looter"] == "unassigned" then
-					BossLootTableData[index] = {i, v["itemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|cffff0000"..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+					BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
                 else 
-					BossLootTableData[index] = {i, v["itemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|c"..classColor..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+					BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|c"..classColor..v["name"], v["bid"], v["item"], lootTime, doneState};
                 end 
                 index = index + 1;
             else
@@ -3998,23 +3999,23 @@ function BossLootTableUpdate(skipsort, filter)
                     else 
                         --special match found so include in table
                         if v["Looter"] == "unassigned" then
-                            BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|cffff0000"..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                            BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
                         else 
-                            BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|c"..classColor..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                            BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|c"..classColor..v["name"], v["bid"], v["item"], lootTime, doneState};
                         end 
                         index = index + 1;
                     end
                 else -- if not special filter, do the normal thing 
-                    indexofsub1 = substr(v["ItemName"], checkFilter);
+                    indexofsub1 = substr(v["itemName"], checkFilter);
                     indexofsub2 = substr(v["Looter"], checkFilter);
                     if not indexofsub1 and not indexofsub2 then
                         --skip
                     else
                         ---
                         if v["name"] == "unassigned" then
-                            BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|cffff0000"..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                            BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
                         else 
-                            BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|c"..classColor..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                            BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|c"..classColor..v["name"], v["bid"], v["item"], lootTime, doneState};
                         end 
                         index = index + 1;
                     end
@@ -4032,7 +4033,12 @@ function BossLootTableUpdate(skipsort, filter)
     BossLootTable:SetData(BossLootTableData, true, skipsort);
     lastSelectedBossNum = bossnum;
 end
-
+function getPlayerClass(PlayerName)
+  
+	local className, classFilename, classId = UnitClass(PlayerName)
+	return className
+  
+end
 function isLooterInSpecialFilter(looter, specialFilter)
     --return if looter is not in special filter
     --GDKPd_Debug("isLooterInSpecialFilter:Called!");
