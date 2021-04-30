@@ -549,8 +549,8 @@ local BossLootTableColDef = {
     },                  
 };
 
-status.itemtt = CreateFrame("GameTooltip", "GDKP_ItemTT", nil, "GameTooltipTemplate")
-status.itemtt:SetAttribute("parent", "UIParent")
+status.itemtt = CreateFrame("GameTooltip", "GDKP_ItemTT", UIParent, "GameTooltipTemplate")
+
 
 
 
