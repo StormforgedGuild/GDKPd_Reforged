@@ -499,7 +499,7 @@ local close = CreateFrame("Button", nil, status, "UIPanelCloseButton")
 close:SetPoint("TOPRIGHT", 2, 1)
 
 --BOSS LOOT TABLE
-local MRT_BossLootTableColDef = {
+local BossLootTableColDef = {
     {["name"] = "", ["width"] = 1},                            -- invisible column for storing the loot number index from the raidlog-table
     {                                                          -- coloumn for Item Icon - need to store ID
         ["name"] = "Icon",
@@ -507,7 +507,7 @@ local MRT_BossLootTableColDef = {
       --  ["DoCellUpdate"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, fShow, self, ...)
             -- icon handling
         --    if fShow then
-                --MRT_Debug("self:GetCell(realrow, column) = "..self:GetCell(realrow, column));
+                --GDKPd_Debug("self:GetCell(realrow, column) = "..self:GetCell(realrow, column));
            --     local itemId = self:GetCell(realrow, column);
            --     local itemTexture = GetItemIcon(itemId);
                 --cellFrame:SetBackdrop( { bgFile = itemTexture } );            -- put this back in, if and when SetBackdrop can handle texture IDs
@@ -547,10 +547,10 @@ local MRT_BossLootTableColDef = {
     },                  
 };
 
-MRT_GUI_BossLootTable = ScrollingTable:CreateST(MRT_BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
-MRT_GUI_BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
-MRT_GUI_BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -75);
-MRT_GUI_BossLootTable:EnableSelection(true);
+BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
+BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
+BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -75);
+BossLootTable:EnableSelection(true);
 
 --BOSS LOOT FILTER
 status.lootFilter = CreateFrame("EditBox", nil, status, "InputBoxTemplate")
@@ -2289,7 +2289,9 @@ function GDKPd:AddItemToPot(link, bid, bname)
 	GDKPd_Debug("AddItemToPot: bid: " ..tostring(bid1))
 	GDKPd_Debug("AddItemToPot: lootername: " ..name)
 	GDKPd.itemCount = GDKPd.itemCount + 1
-	tinsert(GDKPd_PotData.curPotHistory, {item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
+	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(itemLink);
+
+	tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
 end
 
 function GDKPd:FinishAuction(link)
@@ -3804,7 +3806,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			end
 			-- if itemLink == nil, then there was neither a LOOT_ITEM, nor a LOOT_ITEM_SELF message
 			if (itemLink == nil) then
-				-- MRT_Debug("No valid loot event received.");
+				-- GDKPd_Debug("No valid loot event received.");
 				return;
 			end
 			-- if code reaches this point, we should have a valid looter and a valid itemLink
@@ -3925,6 +3927,212 @@ C_ChatInfo.RegisterAddonMessagePrefix("GDKPD VDATA")
 C_ChatInfo.RegisterAddonMessagePrefix("GDKPD MANADJ")
 --prefixes done
 
+---------------------
+-- Boss Loot Table --
+---------------------
+function BossLootTableUpdate(skipsort, filter)
+    
+    local BossLootTableData = {};
+    local raidnum;
+    local indexofsub1;
+    local indexofsub2;
+
+    
+    
+        local index = 1;
+        local checkFilter
+        local hasFilter = filter
+        --checkFilter = MRT_GUIFrame_BossLoot_Filter:GetText();
+        --GDKPd_Debug("BossLootTableUpdate: checkFilter: " ..checkFilter);
+        if checkFilter == "" or checkFilter == nil then 
+            hasFilter = false
+        else 
+            hasFilter = true
+        end
+         
+        for i, v in ipairs(GDKPd_PotData.curPotHistory) do
+            --BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", v["Looter"], v["DKPValue"], v["ItemLink"], v["Note"]};
+            -- SF: if unassigned, make it red.
+            
+            --Set Class Color
+            classColor = "ff9d9d9d";
+            local playerClass = getPlayerClass(v["name"]);   
+            classColor = getClassColor(playerClass);  
+            --GDKPd_Debug("Row: "..v["ItemName"])
+           --GDKPd_Debug("BossLootTableUpdate: elseif raidnum condition: looter: " ..v["Looter"] .."playerClass: "..playerClass..", classColor: " ..classColor);
+            
+            --GetDate 
+            loottime = calculateLootTimeLeft(v["ltime"])
+
+            --SetDoneState
+            --local doneState = SetDoneState(v["Looter"], v["Traded"], v["ItemName"])
+
+            if not hasFilter then
+                --GDKPd_Debug("BossLootTableUpdate: hasFilter: " ..tostring(hasFilter) .." false, so do regular stuff");
+                if v["Looter"] == "unassigned" then
+					BossLootTableData[index] = {i, v["itemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|cffff0000"..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                else 
+					BossLootTableData[index] = {i, v["itemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|c"..classColor..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                end 
+                index = index + 1;
+            else
+                --GDKPd_Debug("BossLootTableUpdate: hasFilter: " ..tostring(hasFilter) .." true, so filter list");
+                --[[ local checkFilter = filter;
+                if not checkFilter then
+                    checkFilter = MRT_GUIFrame_BossLoot_Filter:GetText();
+                end  ]]
+                -- need function here to return true if there are classes to filter
+                --local strFilter, isSpecialFilter = parseFilter4Special(checkFilter); 
+                local strFilter, isSpecialFilter = parseFilter4Classes(checkFilter);
+                if isSpecialFilter then
+                    -- if there are classes or special to filter check for which classes
+                    -- checking if class is in the classfilter list
+                    -- new function to return true if class is in classfilter table.
+                    -- old code: indexofsub = substr(v["Class"], strFilter);
+                    -- old code: if not indexofsub then
+                    local tblSpecialFilter = check4GroupFilters(strFilter);
+                    --tblSpecialFilter = filter out list.
+
+                    if not (isLooterInSpecialFilter(v["Looter"], tblSpecialFilter)) then
+                        --skip no special matches so don't do anything.
+                    else 
+                        --special match found so include in table
+                        if v["Looter"] == "unassigned" then
+                            BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|cffff0000"..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                        else 
+                            BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|c"..classColor..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                        end 
+                        index = index + 1;
+                    end
+                else -- if not special filter, do the normal thing 
+                    indexofsub1 = substr(v["ItemName"], checkFilter);
+                    indexofsub2 = substr(v["Looter"], checkFilter);
+                    if not indexofsub1 and not indexofsub2 then
+                        --skip
+                    else
+                        ---
+                        if v["name"] == "unassigned" then
+                            BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|cffff0000"..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                        else 
+                            BossLootTableData[index] = {i, v["ItemId"], "|c"..v["ItemColor"]..v["ItemName"].."|r", "|c"..classColor..v["Looter"], v["DKPValue"], v["ItemLink"], lootTime, doneState};
+                        end 
+                        index = index + 1;
+                    end
+                end
+            end
+        end
+    
+    table.sort(BossLootTableData, function(a, b) return (a[3] < b[3]); end);
+    --BossLootTable:ClearSelection();
+    --[[ if skipsort then 
+        GDKPd_Debug("BossLootTableUpdate: skipsort==True about to call SetData");
+    else
+        GDKPd_Debug("BossLootTableUpdate: skipsort:Nil about to call SetData");
+    end ]]
+    BossLootTable:SetData(BossLootTableData, true, skipsort);
+    lastSelectedBossNum = bossnum;
+end
+
+function isLooterInSpecialFilter(looter, specialFilter)
+    --return if looter is not in special filter
+    --GDKPd_Debug("isLooterInSpecialFilter:Called!");
+    GDKPd_Debug("isLooterInSpecialFilter: # of items: "..table.maxn(specialFilter));
+    for i, v in pairs(specialFilter) do
+        --GDKPd_Debug("isLooterInSpecialFilter:looter == " ..looter);
+        --GDKPd_Debug("isLooterInSpecialFilter:i == " ..i.." :v == " ..v);
+        if string.lower(v) == string.lower(looter) then
+            return false;
+        else 
+            --GDKPd_Debug("isLooterInSpecialFilter: looter not in table");
+        end
+    end
+    return true;
+end
+
+function parseFilter4Classes(strText)
+    --GDKPd_Debug("parseFilter4Classes called!");
+    classFilters = {}
+    local retVal = string.gsub(strText, " ", "")
+    --GDKPd_Debug("parseFilter4Classes retVal == "..retVal);
+    if string.len(retVal) > 3 and substr(strText,":") then
+        for i in string.gmatch(retVal, "%a+") do
+            --GDKPd_Debug("parseFilter4Classes i == "..i);
+            table.insert(classFilters, i);
+        end
+        if table.maxn(classFilters) > 0 then
+            --GDKPd_Debug("parseFilter4Classes:classFilters true");
+            return classFilters, true;
+        else
+            --GDKPd_Debug("parseFilter4Classes:classFilters false");
+            return strText, false;
+        end 
+    else
+        return strText;
+    end
+end
+
+function check4GroupFilters(classFilter)
+    GDKPd_Debug("check4GroupFilters: called!");
+
+    local sgroupFilters = {
+        ["healer"] = {"druid", "paladin", "priest"},
+        ["healers"] = {"druid", "paladin", "priest"},
+        ["caster"] = {"mage", "warlock"},
+        ["casters"] = {"mage", "warlock"},
+        ["ranged"] = {"mage", "warlock", "hunter"},
+        ["melee"] = {"warrior", "rogue"},
+        ["players"] = {"bank", "disenchanted"},
+        ["player"] = {"bank", "disenchanted"},
+        ["command"] = {"warrior", "hunter", "rogue", "priest"},
+        ["dominance"] = {"druid", "mage", "paladin", "warlock", "shaman"},
+        ["diadem"] = {"druid", "hunter", "paladin", "rogue", "shaman"},
+        ["circlet"] = {"mage", "priest", "warlock", "warrior"},
+    }
+    local oclassFilter = classFilter;
+    
+    for i, v in pairs(oclassFilter) do
+        --look for special filter
+        local tblGroupFilter = sgroupFilters[string.lower(v)];
+
+        if (tblGroupFilter) then
+            --add the list into the classFilter
+            for i1, v1 in pairs(tblGroupFilter) do
+                GDKPd_Debug("check4GroupFilters: i1: " ..i1.. " v1: " ..v1);
+                table.insert(oclassFilter,v1)
+            end
+        end
+    end
+    return oclassFilter
+end
+function calculateLootTimeLeft (timeLooted)
+
+    lootTimeStamp = timeLooted;
+    local nowTimeStamp = time();
+    -- GDKPd_Debug(date("%m/%d/%y %H:%M:%S", nowTimeStamp));
+    -- GDKPd_Debug(date("%m/%d/%y %H:%M:%S", lootTimeStamp));
+    local deltaTime = 7200 - difftime(nowTimeStamp, lootTimeStamp);
+    --GDKPd_Debug(deltaTime)
+
+    if deltaTime > 0 then
+        local hours = math.floor(deltaTime /3600);
+        local minutes = math.floor( (deltaTime - (hours*3600) )/60);
+        local strM --string for minutes to get 01 instead of 1
+        if minutes < 10 then
+            strM = "0"..minutes
+        else
+            strM = minutes
+        end
+        -- GDKPd_Debug(hours);
+        -- GDKPd_Debug(minutes);
+        if hours > 0 then
+            lootTime = hours ..":" ..strM;
+        else
+            lootTime = ":" ..strM;
+        end
+    else
+        lootTime = date("%I:%M", timeLooted); --default to time stamp if the loot has expired
+    end
+end
 ------------------------
 --  helper functions  --
 ------------------------
