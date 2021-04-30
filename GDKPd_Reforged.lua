@@ -18,7 +18,6 @@ local deformat = LibStub("LibDeformat-3.0");
 --MRT IMPORTS
 local ScrollingTable = LibStub("ScrollingTable");
 
-	  
 -- table handling to prevent any memory leakage from accumulating.
 local emptytable = select(2,...).emptytable
 
@@ -462,15 +461,15 @@ status:SetBackdrop({
 	},
 })
 function status:UpdateVisibility(forceCombat)
-	if GDKPd.opt.hide then
-		self:Hide()
-		return
-	end
-	if ((not GDKPd.opt.hideCombat.status) or (not (forceCombat ~= nil and forceCombat or InCombatLockdown()))) and GDKPd:PlayerIsML((UnitName("player")),true) then
-		self:Show()
-	else
-		self:Hide()
-	end
+--	if GDKPd.opt.hide then
+--		self:Hide()
+--		return
+--	end
+--	if ((not GDKPd.opt.hideCombat.status) or (not (forceCombat ~= nil and forceCombat or InCombatLockdown()))) and GDKPd:PlayerIsML((UnitName("player")),true) then
+--		self:Show()
+--	else
+--		self:Hide()
+--	end
 end
 
 --HEADER
@@ -494,6 +493,10 @@ status:SetPoint("TOP", status.header, "TOP", 0, -6)
 status:SetScript("OnShow", function(self)
 	self:UpdateSize()
 end)
+
+--CLOSE BUTTON
+local close = CreateFrame("Button", nil, status, "UIPanelCloseButton")
+close:SetPoint("TOPRIGHT", 2, 1)
 
 --BOSS LOOT TABLE
 local MRT_BossLootTableColDef = {
@@ -653,7 +656,7 @@ status.options:SetSize(75, 22)
 status.options:SetPoint("LEFT", status.removePot, "RIGHT")
 status.options:SetText("Options")
 status.options:SetScript("OnClick", function(self)
-	--StaticPopup_Show("GDKPD_RESETPOT")
+	LibStub("AceConfigDialog-3.0"):Open("GDKPd")
 end)
 
 --RAID LOG TABLE
@@ -3379,7 +3382,8 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			elseif input:lower() == "vercheck" then
 				GDKPd.version:Show()
 			else
-				LibStub("AceConfigDialog-3.0"):Open("GDKPd")
+				--LibStub("AceConfigDialog-3.0"):Open("GDKPd")
+				self.status:Show();
 			end
 		end
 		SLASH_GDKPD1 = "/gdkpd"
