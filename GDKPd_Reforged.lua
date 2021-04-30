@@ -378,6 +378,7 @@ GDKPd.auctionList = {}
 GDKPd.ignoredLinks = {}
 GDKPd.versions = {}
 GDKPd.itemCount = 0 -- # of loot drop, also index of loot that dropped.
+GDKPd.itemNew = true --flag for auction if new, add to curPotHistory, if false, search to modify.
 GDKPd:Hide()
 GDKPd:SetScript("OnUpdate", function(self, elapsed)
 	if (not self.curAuction.item) and (not next(self.curAuctions)) then self:Hide() return end
@@ -608,6 +609,20 @@ status.bidLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.bidLootFont:SetText("Bid")
 status.bidLoot:SetFontString(status.bidLootFont)
 status.bidLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 462, -28);
+status.bidLoot:SetScript("OnClick", function() bidLoot_click(); end);
+
+function bidLoot_click()
+	
+    local loot_select = BossLootTable:GetSelection();
+    if (loot_select == nil) then
+        GDKPd_Debug("No loot selected");
+        return;
+    end
+    local lootnum = BossLootTable:GetCell(loot_select, 1);
+	local link = GDKPd_PotData.curPotHistory[lootnum]["item"]
+	GDKPd:DoAuction(link, lootnum)
+    --LootAnnounce("RAID_WARNING", MRT_RaidLog[raidnum]["Loot"][lootnum]["ItemLink"], MRT_GUI_BossLootTable:GetCell(loot_select, 5))
+end
 
 --TRADE LOOT BUTTON
 status.tradeLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -2201,15 +2216,20 @@ function GDKPd:AnnounceLoot(shouldQueueAuctions)
 	end
 	lootList:Release()
 end
-function GDKPd:QueueAuction(item, minbid, increment)
+function GDKPd:QueueAuction(item, minbid, increment, index)
 	if (not GDKPd.curAuction.item) or GDKPd.opt.allowMultipleAuctions then
-		GDKPd:AuctionOffItem(item, minbid, increment)
+		if (index) then 
+			GDKPd:AuctionOffItem(item, minbid, increment, index)
+		else
+			--if index is not passed in, we should find the item in the curpot and pass in the index.  Skip for now.
+			GDKPd:AuctionOffItem(item, minbid, increment, GDKPd.itemCount)
+		end 
 	else
 		SendAddonMessage("GDKPD START", item, "RAID")
 		tinsert(GDKPd.auctionList,emptytable(item,minbid,increment))
 	end
 end
-function GDKPd:AuctionOffItem(item, minbid, increment)
+function GDKPd:AuctionOffItem(item, minbid, increment, index)
 	if (GDKPd.curAuction.item) and (not self.opt.allowMultipleAuctions) then return end
 	if (self.opt.allowMultipleAuctions) and (self.curAuctions[item]) then return end
 	if (not self.opt.allowMultipleAuctions) then
@@ -2220,6 +2240,7 @@ function GDKPd:AuctionOffItem(item, minbid, increment)
 		GDKPd.curAuction.increment = increment
 		GDKPd.curAuction.bidders = emptytable()
 		GDKPd.curAuction.timeRemains = self.opt.auctionTimer
+		GDKPd.curAuction.index = index
 	else
 		-- new code
 		SendChatMessage(("Bidding starts on %s. Bid using format '[item] 1000', starting bid %d gold, minimum increment %d gold. TTL: %d/%d"):format(item,minbid,increment,self.opt.auctionTimer, self.opt.auctionTimerRefresh), (self.opt.announceRaidWarning and (IsRaidOfficer() or IsRaidLeader())) and "RAID_WARNING" or "RAID")
@@ -2229,6 +2250,7 @@ function GDKPd:AuctionOffItem(item, minbid, increment)
 		aucTable.increment = increment
 		aucTable.bidders = emptytable()
 		aucTable.timeRemains = self.opt.auctionTimer
+		aucTable.index = index
 		GDKPd.curAuctions[item] = aucTable
 	end
 	GDKPd:Show()
@@ -2280,7 +2302,7 @@ function GDKPd:CancelAuction(link)
 	end
 end
 
-function GDKPd:AddItemToPot(link, bid, bname)
+function GDKPd:AddItemToPot(link, bid, bname, select)
 	--add item into GDKPd_PotData.curPotHistory here.
 	local itemlink = link
 	local bid1 = bid
@@ -2288,11 +2310,48 @@ function GDKPd:AddItemToPot(link, bid, bname)
 	GDKPd_Debug("AddItemToPot: link: " ..itemlink)
 	GDKPd_Debug("AddItemToPot: bid: " ..tostring(bid1))
 	GDKPd_Debug("AddItemToPot: lootername: " ..name)
-	GDKPd.itemCount = GDKPd.itemCount + 1
 	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(link);
-
+	GDKPd.itemCount = GDKPd.itemCount + 1
 	tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
+	local loottable = BossLootTableUpdate()
+	if select then 
+		if loottable then 
+			for i = 1, #loottable do
+				pName = cleanString(loottable[i][4]);
+				pItem = loottable[i][6]
+				GDKPd_Debug("selecPlayer: Comparing pName: " ..pName.." and name: " ..name)
+				if (pName == name) and (pItem == itemlink) then
+					GDKPd_Debug("selecPlayer: Player, "..name.. " found! i: " ..i)
+					BossLootTable:SetSelection(i)
+					return;
+				end
+			end
+		end
+		
+	end 
+end
+
+function GDKPd:UpdateItemInPot(link, bid, bname, index)
+	--add item into GDKPd_PotData.curPotHistory here.
+	--tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
+	GDKPd_Debug("UpdateItemInPot: link: " ..link)
+	GDKPd_Debug("UpdateItemInPot: bid: " ..tostring(bid))
+	GDKPd_Debug("UpdateItemInPot: lootername: " ..bname)
+	GDKPd_Debug("UpdateItemInPot: index: " ..index)
+	GDKPd_PotData.curPotHistory[index]["bid"]=bid
+	GDKPd_PotData.curPotHistory[index]["name"]=bname
 	BossLootTableUpdate()
+end
+
+function GDKPd:DoAuction(link, index)
+	if self:PlayerIsML((UnitName("player")),true) then
+		for itemLink in string.gmatch(link, "|c........|Hitem:.-|r") do
+			local itemID = tonumber(itemLink:match("|Hitem:(%d+):"))
+			self:QueueAuction(itemLink, GDKPd:GetStartBid(itemID), GDKPd:GetMinIncrement(itemID), index)
+		end
+	else
+		print(L["Cannot start auction without Master Looter privileges."])
+	end
 end
 
 function GDKPd:FinishAuction(link)
@@ -2326,7 +2385,8 @@ function GDKPd:FinishAuction(link)
 				end
 				--This is where we'll want to find and update instead of adding new item.
 				GDKPd_Debug("FinishAuction: link: "..link.." bid: " ..totalAmount.. " aucdata.bidders[1].bidderName: " ..aucdata.bidders[1].bidderName)
-				self:AddItemToPot(link, totalAmount, aucdata.bidders[1].bidderName)
+				--self:AddItemToPot(link, totalAmount, aucdata.bidders[1].bidderName)
+				self:UpdateItemInPot(link, totalAmount, aucdata.bidders[1].bidderName, self.curAuction.index)
 				--tinsert(GDKPd_PotData.curPotHistory, {item=link, bid=totalAmount, name=aucdata.bidders[1].bidderName})
 				self.status:Update()
 				if self.opt.autoAwardLoot then
@@ -2379,12 +2439,13 @@ function GDKPd:FinishAuction(link)
 				SendChatMessage("Current pot: "..GDKPd_PotData.potAmount.." gold","RAID")
 			end
 			--using new add method
-			GDKPd_Debug("self.curAuction.bidders: self.curAuction.item: " ..self.curAuction.item.. " totalAmount: " ..totalAmount.. " self.curAuction.bidders[1].bidderName: " ..self.curAuction.bidders[1].bidderName)
+			--GDKPd_Debug("self.curAuction.bidders: self.curAuction.item: " ..self.curAuction.item.. " totalAmount: " ..totalAmount.. " self.curAuction.bidders[1].bidderName: " ..self.curAuction.bidders[1].bidderName)
 			local aucitem = self.curAuction.item
 			local bidamt = tonumber(totalAmount)
 			local winname = self.curAuction.bidders[1].bidderName
-			GDKPd_Debug("self.curAuction.bidders: aucitem: " ..aucitem.. " bidamt: " ..bidamt.. " winname: " ..winname)
-			self:AddItemToPot(aucitem, bidamt, winname)
+			GDKPd_Debug("self.curAuction.bidders: aucitem: " ..aucitem.. " bidamt: " ..bidamt.. " winname: " ..winname, "self.curAuction.index: " ..self.curAuction.index)
+			--self:AddItemToPot(aucitem, bidamt, winname)
+			self:UpdateItemInPot(aucitem, bidamt, winname, self.curAuction.index)
 			--tinsert(GDKPd_PotData.curPotHistory, {item=self.curAuction.item, bid=totalAmount, name=self.curAuction.bidders[1].bidderName})
 			self.status:Update()
 			if self.opt.autoAwardLoot then
@@ -2648,7 +2709,7 @@ function GDKPd:GetUnoccupiedFrame()
 		f:Hide()
 		local itemLink = f.itemlink
 		local itemID = tonumber(itemLink:match("|Hitem:(%d+):"))
-		GDKPd:QueueAuction(itemLink, GDKPd:GetStartBid(itemID), GDKPd:GetMinIncrement(itemID))
+		GDKPd:QueueAuction(itemLink, GDKPd:GetStartBid(itemID), GDKPd:GetMinIncrement(itemID), GDKPd.curAuction.index)
 	end)
 	f.restartAuction:Hide()
 	f.cancelAuction = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
@@ -3368,14 +3429,17 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 		SlashCmdList["GDKPD"] = function(input)
 			local cmd, link = input:match("(%S+)%s+(|c........|Hitem:.+|r)")
 			if (cmd and cmd == "auction") and link then
-				if self:PlayerIsML((UnitName("player")),true) then
+				--call DoAuction
+				self:AddItemToPot(link, 0, "unassigned", true)
+				bidLoot_click()
+				--[[ if self:PlayerIsML((UnitName("player")),true) then
 					for itemLink in string.gmatch(link, "|c........|Hitem:.-|r") do
 						local itemID = tonumber(itemLink:match("|Hitem:(%d+):"))
 						self:QueueAuction(itemLink, GDKPd:GetStartBid(itemID), GDKPd:GetMinIncrement(itemID))
 					end
 				else
 					print(L["Cannot start auction without Master Looter privileges."])
-				end
+				end ]]
 			elseif input:lower() == "ver" then
 				print(L["GDKPd version %s. Packaged %s."]:format(DEBUGFORCEVERSION or "2.0.0","2020-01-01T00:00:00Z"))
 			elseif input:lower() == "history" then
@@ -4041,7 +4105,7 @@ function BossLootTableUpdate(skipsort, filter)
         GDKPd_Debug("BossLootTableUpdate: skipsort:Nil about to call SetData");
     end ]]
     BossLootTable:SetData(BossLootTableData, true, skipsort);
-    lastSelectedBossNum = bossnum;
+	return BossLootTableData
 end
 function getPlayerClass(PlayerName)
   
