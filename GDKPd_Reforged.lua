@@ -548,16 +548,13 @@ local BossLootTableColDef = {
 --    end,
     },                  
 };
-
+--Tooltip definition
 status.itemtt = CreateFrame("GameTooltip", "GDKP_ItemTT", UIParent, "GameTooltipTemplate")
 
-
-
-
-BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
-BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
-BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -75);
-BossLootTable:EnableSelection(true);
+status.BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
+status.BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
+status.BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -75);
+status.BossLootTable:EnableSelection(true);
 
 --BOSS LOOT FILTER
 status.lootFilter = CreateFrame("EditBox", nil, status, "InputBoxTemplate")
@@ -619,12 +616,12 @@ status.bidLoot:SetScript("OnClick", function() bidLoot_click(); end);
 
 function bidLoot_click()
 	
-    local loot_select = BossLootTable:GetSelection();
+    local loot_select = status.BossLootTable:GetSelection();
     if (loot_select == nil) then
         GDKPd_Debug("No loot selected");
         return;
     end
-    local lootnum = BossLootTable:GetCell(loot_select, 1);
+    local lootnum = status.BossLootTable:GetCell(loot_select, 1);
 	local link = GDKPd_PotData.curPotHistory[lootnum]["item"]
 	GDKPd:DoAuction(link, lootnum)
     --LootAnnounce("RAID_WARNING", MRT_RaidLog[raidnum]["Loot"][lootnum]["ItemLink"], MRT_GUI_BossLootTable:GetCell(loot_select, 5))
@@ -686,11 +683,11 @@ local PotLogTableColDef = {
     {["name"] = "Name", ["width"] = 65},
 };
 
-PotLogTable = ScrollingTable:CreateST(PotLogTableColDef, 4, nil, nil, status);           
-PotLogTable.head:SetHeight(15);                                                                    
-PotLogTable.frame:SetPoint("TOPLEFT", status.reset, "TOPLEFT", 0, -45);
-PotLogTable:EnableSelection(true);
-PotLogTable:RegisterEvents({
+status.PotLogTable = ScrollingTable:CreateST(PotLogTableColDef, 4, nil, nil, status);           
+status.PotLogTable.head:SetHeight(15);                                                                    
+status.PotLogTable.frame:SetPoint("TOPLEFT", status.reset, "TOPLEFT", 0, -45);
+status.PotLogTable:EnableSelection(true);
+status.PotLogTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
 	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
     	GDKPd:BossLootTableUpdate();
@@ -710,7 +707,7 @@ l:SetEndPoint("TOPLEFT",185,-140)
 status.potItemsLabel = status:CreateFontString()
 status.potItemsLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 status.potItemsLabel:SetTextColor(1,1,1)
-status.potItemsLabel:SetPoint("TOPLEFT", PotLogTable.frame, "TOPLEFT", 05, -88)
+status.potItemsLabel:SetPoint("TOPLEFT", status.PotLogTable.frame, "TOPLEFT", 05, -88)
 status.potItemsLabel:SetJustifyH("LEFT")
 status.potItemsLabel:SetText("Item Spend:")
 
@@ -2335,7 +2332,7 @@ function GDKPd:AddItemToPot(link, bid, bname, select)
 				GDKPd_Debug("selecPlayer: Comparing pName: " ..pName.." and name: " ..name)
 				if (pName == name) and (pItem == itemlink) then
 					GDKPd_Debug("selecPlayer: Player, "..name.. " found! i: " ..i)
-					BossLootTable:SetSelection(i)
+					status.BossLootTable:SetSelection(i)
 					return;
 				end
 			end
@@ -4029,7 +4026,7 @@ function GDKPd:PotLogTableUpdate()
 		PotLogTableData[i] = {date("%m/%d %H:%M", realdate), v["note"]};
 	end
 	table.sort(PotLogTableData, function(a, b) return (a[1] > b[1]); end);
-	PotLogTable:SetData(PotLogTableData, true);
+	status.PotLogTable:SetData(PotLogTableData, true);
 end 
 
 function stringtodate(timeString)
@@ -4060,7 +4057,7 @@ end
 function GDKPd:BossLootTableUpdate(skipsort, filter)
     GDKPd_Debug("BossLootTableUpdate Fired!")
     local BossLootTableData = {};
-    local potnum = PotLogTable:GetSelection()
+    local potnum = status.PotLogTable:GetSelection()
 	local curPot = GDKPd_PotData.curPotHistory
     local indexofsub1;
     local indexofsub2;
@@ -4068,8 +4065,8 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
 		GDKPd_Debug("BossLootTableData: no curpot")
 		GDKPd_Debug("BossLootTableData: set curPot to history")
 		if not (potnum) then 
-			PotLogTable:SetSelection(1);
-			potnum = PotLogTable:GetSelection()
+			status.PotLogTable:SetSelection(1);
+			potnum = status.PotLogTable:GetSelection()
 		end 
 		GDKPd_Debug("BosslootTableUpdate: potnum: " ..potnum)
 		if #GDKPd_PotData["history"] == 0 then 
@@ -4173,7 +4170,7 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
     else
         GDKPd_Debug("BossLootTableUpdate: skipsort:Nil about to call SetData");
     end ]]
-    BossLootTable:SetData(BossLootTableData, true, skipsort);
+    status.BossLootTable:SetData(BossLootTableData, true, skipsort);
 	return BossLootTableData
 end
 function getPlayerClass(PlayerName)
