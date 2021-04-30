@@ -75,6 +75,7 @@ StaticPopupDialogs["GDKPD_RESETPOT"] = {
 		if GDKPd.history:IsShown() then
 			GDKPd.history:Update()
 		end
+		GDKPd:PotLogTableUpdate()
 	end,
 	OnCancel=function(self)
 		GDKPd_PotData.potAmount = 0
@@ -525,13 +526,13 @@ local BossLootTableColDef = {
             -- tooltip handling
             local itemLink = self:GetCell(realrow, 6);
             cellFrame:SetScript("OnEnter", function()
-                                             MRT_GUI_ItemTT:SetOwner(cellFrame, "ANCHOR_RIGHT");
-                                             MRT_GUI_ItemTT:SetHyperlink(itemLink);
-                                             MRT_GUI_ItemTT:Show();
+                                             status.itemtt:SetOwner(cellFrame, "ANCHOR_RIGHT");
+                                             status.itemtt:SetHyperlink(itemLink);
+                                             status.itemtt:Show();
                                            end);
             cellFrame:SetScript("OnLeave", function()
-                                             MRT_GUI_ItemTT:Hide();
-                                             MRT_GUI_ItemTT:SetOwner(UIParent, "ANCHOR_NONE");
+												status.itemtt:Hide();
+												status.itemtt:SetOwner(UIParent, "ANCHOR_NONE");
                                            end);
         end,
     },
@@ -547,6 +548,11 @@ local BossLootTableColDef = {
 --    end,
     },                  
 };
+
+status.itemtt = CreateFrame("GameTooltip", "GDKP_ItemTT", nil, "GameTooltipTemplate")
+status.itemtt:SetAttribute("parent", "UIParent")
+
+
 
 BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
 BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
@@ -675,15 +681,22 @@ status.options:SetScript("OnClick", function(self)
 end)
 
 --RAID LOG TABLE
-local MRT_RaidLogTableColDef = {
+local PotLogTableColDef = {
     {["name"] = "Date", ["width"] = 75},
     {["name"] = "Name", ["width"] = 65},
 };
 
-MRT_GUI_AttendeesTable = ScrollingTable:CreateST(MRT_RaidLogTableColDef, 4, nil, nil, status);           
-MRT_GUI_AttendeesTable.head:SetHeight(15);                                                                    
-MRT_GUI_AttendeesTable.frame:SetPoint("TOPLEFT", status.reset, "TOPLEFT", 0, -45);
-MRT_GUI_AttendeesTable:EnableSelection(true);
+PotLogTable = ScrollingTable:CreateST(PotLogTableColDef, 4, nil, nil, status);           
+PotLogTable.head:SetHeight(15);                                                                    
+PotLogTable.frame:SetPoint("TOPLEFT", status.reset, "TOPLEFT", 0, -45);
+PotLogTable:EnableSelection(true);
+PotLogTable:RegisterEvents({
+	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
+	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
+    	GDKPd:BossLootTableUpdate();
+		return true
+	end,
+})
 
 -- LINE BELOW POT LIST
 local l = status:CreateLine()
@@ -697,7 +710,7 @@ l:SetEndPoint("TOPLEFT",185,-140)
 status.potItemsLabel = status:CreateFontString()
 status.potItemsLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 status.potItemsLabel:SetTextColor(1,1,1)
-status.potItemsLabel:SetPoint("TOPLEFT", MRT_GUI_AttendeesTable.frame, "TOPLEFT", 05, -88)
+status.potItemsLabel:SetPoint("TOPLEFT", PotLogTable.frame, "TOPLEFT", 05, -88)
 status.potItemsLabel:SetJustifyH("LEFT")
 status.potItemsLabel:SetText("Item Spend:")
 
@@ -2313,7 +2326,7 @@ function GDKPd:AddItemToPot(link, bid, bname, select)
 	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(link);
 	GDKPd.itemCount = GDKPd.itemCount + 1
 	tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
-	local loottable = BossLootTableUpdate()
+	local loottable = GDKPd:BossLootTableUpdate()
 	if select then 
 		if loottable then 
 			for i = 1, #loottable do
@@ -2340,7 +2353,7 @@ function GDKPd:UpdateItemInPot(link, bid, bname, index)
 	GDKPd_Debug("UpdateItemInPot: index: " ..index)
 	GDKPd_PotData.curPotHistory[index]["bid"]=bid
 	GDKPd_PotData.curPotHistory[index]["name"]=bname
-	BossLootTableUpdate()
+	GDKPd:BossLootTableUpdate()
 end
 
 function GDKPd:DoAuction(link, index)
@@ -3450,8 +3463,9 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 				GDKPd.version:Show()
 			else
 				--LibStub("AceConfigDialog-3.0"):Open("GDKPd")
+				self:PotLogTableUpdate();
 				self.status:Show();
-				BossLootTableUpdate();
+				
 			end
 		end
 		SLASH_GDKPD1 = "/gdkpd"
@@ -4003,20 +4017,75 @@ C_ChatInfo.RegisterAddonMessagePrefix("GDKPD VREQ")
 C_ChatInfo.RegisterAddonMessagePrefix("GDKPD VDATA")
 C_ChatInfo.RegisterAddonMessagePrefix("GDKPD MANADJ")
 --prefixes done
+------------------
+--Pot Log Table --
+------------------
+function GDKPd:PotLogTableUpdate()
+	local PotLogTableData = {};
+	-- insert reverse order
+	for i, v in ipairs(GDKPd_PotData["history"]) do
+		--MRT_GUI_RaidLogTableData[i] = {i, date("%m/%d %H:%M", v["StartTime"]), v["RaidZone"], v["RaidSize"]};
+		local realdate = stringtodate(v["date"])
+		PotLogTableData[i] = {date("%m/%d %H:%M", realdate), v["note"]};
+	end
+	table.sort(PotLogTableData, function(a, b) return (a[1] > b[1]); end);
+	PotLogTable:SetData(PotLogTableData, true);
+end 
+
+function stringtodate(timeString)
+	monthShortTable={Jan=1,Feb=2,Mar=3,Apr=4,May=5,Jun=6,Jul=7,Aug=8,Sep=9,Oct=10,Nov=11,Dec=12}
+	-- timeString = 'Sun Jan  7 09:42:54 2018'
+	-- This has no definition of time zone, Let's assume that it is in UTC.
+	-- Note that the os.time() function requires a table that is all numbers, so we
+	-- need to use the monthShortTable table defined in Initialize() to turn the
+	-- "Jan" into 1.
+	formatPattern = '^%a+%s+(%a+)%s+(%d+)%s+(%d+):(%d+):(%d+)%s+(%d+)$'
+	monthText, day, hour, min, sec, year = timeString:match(formatPattern)
+	month=monthShortTable[monthText]
+	
+	timeStamp = time({month=month, day=day, year=year, hour=hour, min=min, sec=sec, isdst=false})
+	
+	--formatedString = date('%A, %B %d, %Y at %I:%M:%S %p', timeStamp)
+	-- Just for cosmetics, strip off any leading zeros on the day, and on the hour.
+	-- Regrettably, Lua's os.date() doesn't  support Rainmeter's "#" character to suppress leading zeros.
+	--formatedString = formatedString:gsub(' 0',' ')
+	
+	--return formatedString..'\nUnix timestamp is '..timeStamp
+	return timeStamp
+end
 
 ---------------------
 -- Boss Loot Table --
 ---------------------
-function BossLootTableUpdate(skipsort, filter)
-    
+function GDKPd:BossLootTableUpdate(skipsort, filter)
+    GDKPd_Debug("BossLootTableUpdate Fired!")
     local BossLootTableData = {};
-    local raidnum;
+    local potnum = PotLogTable:GetSelection()
+	local curPot = GDKPd_PotData.curPotHistory
     local indexofsub1;
     local indexofsub2;
-    
-        local index = 1;
-        local checkFilter
-        local hasFilter = filter
+	if #curPot == 0 then
+		GDKPd_Debug("BossLootTableData: no curpot")
+		GDKPd_Debug("BossLootTableData: set curPot to history")
+		if not (potnum) then 
+			PotLogTable:SetSelection(1);
+			potnum = PotLogTable:GetSelection()
+		end 
+		GDKPd_Debug("BosslootTableUpdate: potnum: " ..potnum)
+		if #GDKPd_PotData["history"] == 0 then 
+			--no history
+			return
+		else
+			curPot = GDKPd_PotData["history"][potnum]["items"]
+		end 
+	end
+	if not(curPot) then 
+		GDKPd_Debug("BossLootTableData: pot not found!")
+		return 
+	end
+	local index = 1;
+	local checkFilter
+	local hasFilter = filter
         --checkFilter = MRT_GUIFrame_BossLoot_Filter:GetText();
         --GDKPd_Debug("BossLootTableUpdate: checkFilter: " ..checkFilter);
         if checkFilter == "" or checkFilter == nil then 
@@ -4025,7 +4094,7 @@ function BossLootTableUpdate(skipsort, filter)
             hasFilter = true
         end
          
-        for i, v in ipairs(GDKPd_PotData.curPotHistory) do
+        for i, v in ipairs(curPot) do
             --BossLootTableData[index] = {i, v["ItemId"], "|c"..v["itemColor"]..v["itemName"].."|r", v["Looter"], v["DKPValue"], v["ItemLink"], v["Note"]};
             -- SF: if unassigned, make it red.
             
