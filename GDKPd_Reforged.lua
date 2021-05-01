@@ -3464,7 +3464,6 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 				--LibStub("AceConfigDialog-3.0"):Open("GDKPd")
 				self:PotLogTableUpdate();
 				status.PotLogTable:SetSelection(1)
-				GDKPd:PotChanged()
 				GDKPd:PlayerBalanceTableUpdate()
 				self.status:Show();
 				status:Update();
@@ -4132,12 +4131,15 @@ function GDKPd:PlayerBalanceTableUpdate()
 		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: v: " ..v)
 		classColor = GDKPd:getClassColorFromName(v)
 		intCount = intCount + 1
-		PlayerBalanceTableData[intCount] = {i, "|c"..classColor..v};
+		PlayerBalanceTableData[intCount] = {intCounter, i, "|c"..classColor..v};
 	end
 	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: outside for" )
-	table.sort(PlayerBalanceTableData, function(a, b) return (a[1] > b[1]); end);
+	--table.sort(PlayerBalanceTableData, function(a, b) return (a[1] > b[1]); end);
 	status.PlayerBalanceTable:SetData(PlayerBalanceTableData, true);
 end
+
+
+
 
 ---------------------
 -- Boss Loot Table --
