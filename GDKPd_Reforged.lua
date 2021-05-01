@@ -129,13 +129,14 @@ StaticPopupDialogs["GDKPD_ADDTOPOT"] = {
 	OnAccept=function(self)
 		GDKPd_PotData.potAmount = (tonumber(self.editBox:GetText()) or 0)+GDKPd_PotData.potAmount
 		--tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
-
-	
 		local bid1 = tonumber(self.editBox:GetText()) or 0
+		if bid1 < 0 then
+			bid1 = bid1*(-1);
+		end
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
-		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustemnt", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Iron Grenade]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustemnt", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
@@ -159,7 +160,15 @@ StaticPopupDialogs["GDKPD_REMFROMPOT"] = {
 	end,
 	OnAccept = function(self)
 		GDKPd_PotData.potAmount = math.max(0, GDKPd_PotData.potAmount-(tonumber(self.editBox:GetText()) or 0))
-		tinsert(GDKPd_PotData.curPotHistory, (tonumber(self.editBox:GetText()) or 0)*(-1))
+		--tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
+		local bid1 = (tonumber(self.editBox:GetText()) or 0)*(-1)
+		if bid1 >0 then
+			bid1 = bid1*(-1);
+		end
+		local name = ""
+		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
+		GDKPd.itemCount = GDKPd.itemCount + 1
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustemnt", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
