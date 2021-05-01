@@ -586,7 +586,6 @@ status.lootFilter:SetPoint("TOPLEFT", status, "TOPLEFT", 210, -25);
 --ADD LOOT BUTTON
 status.addLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.addLoot:SetSize(22, 22)
-status.addLoot:SetPoint("LEFT", status.distribute, "RIGHT")
 status.addLootFont = status.addLoot:CreateFontString()
 status.addLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addLootFont:SetText("+")
@@ -596,7 +595,6 @@ status.addLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 315, -28);
 --REMOVE LOOT BUTTON
 status.removeLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.removeLoot:SetSize(22, 22)
-status.removeLoot:SetPoint("LEFT", status.distribute, "RIGHT")
 status.removeLootFont = status.removeLoot:CreateFontString()
 status.removeLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
 status.removeLootFont:SetText("-")
@@ -606,7 +604,6 @@ status.removeLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 337, -28);
 --EDIT LOOT BUTTON
 status.editLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.editLoot:SetSize(50, 22)
-status.editLoot:SetPoint("LEFT", status.distribute, "RIGHT")
 status.editLootFont = status.editLoot:CreateFontString()
 status.editLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.editLootFont:SetText("Edit")
@@ -616,7 +613,6 @@ status.editLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 360, -28);
 --LINK LOOT BUTTON
 status.linkLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.linkLoot:SetSize(50, 22)
-status.linkLoot:SetPoint("LEFT", status.distribute, "RIGHT")
 status.linkLootFont = status.linkLoot:CreateFontString()
 status.linkLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.linkLootFont:SetText("Link")
@@ -626,7 +622,6 @@ status.linkLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 411, -28);
 --BID LOOT BUTTON
 status.bidLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.bidLoot:SetSize(50, 22)
-status.bidLoot:SetPoint("LEFT", status.distribute, "RIGHT")
 status.bidLootFont = status.bidLoot:CreateFontString()
 status.bidLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.bidLootFont:SetText("Bid")
@@ -650,7 +645,6 @@ end
 --TRADE LOOT BUTTON
 status.tradeLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.tradeLoot:SetSize(50, 22)
-status.tradeLoot:SetPoint("LEFT", status.distribute, "RIGHT")
 status.tradeLootFont = status.tradeLoot:CreateFontString()
 status.tradeLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.tradeLootFont:SetText("Trade")
@@ -772,7 +766,7 @@ l:SetEndPoint("TOPLEFT",185,-200)
 --POST RULES
 status.rules = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.rules:SetSize(90, 22)
-status.rules:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 268)
+status.rules:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 0)
 status.rules:SetText("Post rules")
 status.rules:SetScript("OnClick",function()
 	local announceStrings = emptytable("")
@@ -801,14 +795,36 @@ status.rules:Disable()
 status.text = status:CreateFontString()
 status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 status.text:SetTextColor(1,1,1)
---status.text:SetPoint("TOPLEFT", 15, -15)
 status.text:SetJustifyH("LEFT")
 status.distribute = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.distribute:SetSize(80, 22)
-status.distribute:SetPoint("LEFT", status.rules, "RIGHT")
+status.distribute:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 268)
 status.distribute:SetText("Distribute")
 status.distribute:SetScript("OnClick", function(self)
 	GDKPd:DistributePot()
+end)
+
+-- ADD/ REMOVE GOLD FROM PLAYERS
+status.addPlayerValueButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.addPlayerValueButton:SetSize(22,22)
+status.addPlayerValueButton:SetPoint("LEFT", status.distribute, "RIGHT", 47, 0)
+status.addPlayerValueLabel = status.addLoot:CreateFontString()
+status.addPlayerValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
+status.addPlayerValueLabel:SetText("+")
+status.addPlayerValueButton:SetFontString(status.addPlayerValueLabel)
+status.addPlayerValueButton:SetScript("OnClick", function(self)
+	StaticPopup_Show("GDKPD_ADDTOPOT")
+end)
+
+status.removePlayerValueButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.removePlayerValueButton:SetSize(22,22)
+status.removePlayerValueButton:SetPoint("LEFT", status.addPlayerValueButton, "RIGHT", 0, 0)
+status.removePlayerValueLabel = status.addLoot:CreateFontString()
+status.removePlayerValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
+status.removePlayerValueLabel:SetText("-")
+status.removePlayerValueButton:SetFontString(status.removePlayerValueLabel)
+status.removePlayerValueButton:SetScript("OnClick", function(self)
+	StaticPopup_Show("GDKPD_REMFROMPOT")
 end)
 
 --ATTENDEES TABLE
@@ -820,7 +836,7 @@ local GDKPd_RaidAttendeesTableColDef = {
 
 MRT_GUI_AttendeesTable = ScrollingTable:CreateST(GDKPd_RaidAttendeesTableColDef,18, 11, nil, status);           
 MRT_GUI_AttendeesTable.head:SetHeight(15);                                                                    
-MRT_GUI_AttendeesTable.frame:SetPoint("TOPLEFT", status.rules, "BOTTOMLEFT", 0 , -20);
+MRT_GUI_AttendeesTable.frame:SetPoint("TOPLEFT", status.distribute, "BOTTOMLEFT", 0 , -20);
 MRT_GUI_AttendeesTable:EnableSelection(true);
 
 --SHOW AUCTION HISTORY
