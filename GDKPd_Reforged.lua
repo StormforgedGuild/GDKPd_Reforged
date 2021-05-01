@@ -4033,7 +4033,7 @@ function GDKPd:PotLogTableUpdate()
 		PotLogTableData[intCount] = {i, date("%m/%d %H:%M", realdate), v["note"]};
 	end
 	intCount = intCount + 1
-	PotLogTableData[intCount] = {9999, date("%m/%d %H:%M", time()), "Active"};
+	PotLogTableData[intCount] = {9999, date("%m/%d %H:%M", time()), "Active Pot"};
 	table.sort(PotLogTableData, function(a, b) return (a[1] > b[1]); end);
 	status.PotLogTable:SetData(PotLogTableData, true);
 end 
