@@ -834,9 +834,9 @@ local GDKPd_PlayerBalanceTableColDef = {
     {["name"] = "$$$", ["width"] = 40},
 };
 
-status.PlayerBalanceTable = ScrollingTable:CreateST(GDKPd_PlayerBalanceTableColDef,18, 10, nil, status);           
+status.PlayerBalanceTable = ScrollingTable:CreateST(GDKPd_PlayerBalanceTableColDef,18, 11, nil, status);           
 status.PlayerBalanceTable.head:SetHeight(15);                                                                    
-status.PlayerBalanceTable.frame:SetPoint("TOPLEFT", status.rules, "BOTTOMLEFT", 0 , -20);
+status.PlayerBalanceTable.frame:SetPoint("TOPLEFT", status.distribute, "BOTTOMLEFT", 0 , -20);
 status.PlayerBalanceTable:EnableSelection(true);
 
 --SHOW AUCTION HISTORY
