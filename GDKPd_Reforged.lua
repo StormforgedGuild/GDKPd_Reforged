@@ -136,7 +136,7 @@ StaticPopupDialogs["GDKPD_ADDTOPOT"] = {
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
-		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustemnt", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
@@ -168,7 +168,7 @@ StaticPopupDialogs["GDKPD_REMFROMPOT"] = {
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
-		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustemnt", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
