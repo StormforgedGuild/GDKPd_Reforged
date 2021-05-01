@@ -1,4 +1,5 @@
-local MAJOR, MINOR = "ScrollingTable", tonumber("bed1ec579596101579452182d240b1ca3267c599") or 40000;
+local MAJOR, MINOR = "ScrollingTable2", tonumber("bed1ec579596101579452182d240b1ca3267c599") or 40000;
+
 if MINOR < 40000 then
 	MINOR = MINOR + 10000;
 end
@@ -735,12 +736,12 @@ do
 
 	
 	function doOnClick(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, disabledeselect, groupby, ...)
-		--GDKPd_Debug("ST_doOnclick fired!");
+		--GDKPd_Debug("ST_doOnClick fired!");
 		st = table;
 		if button == "LeftButton" then	-- LS: only handle on LeftButton click (right passes thru)
-			--GDKPd_Debug("ST_doOnclick button == Leftbutton");
+			--GDKPd_Debug("ST_doOnClick button == Leftbutton");
 			if not (row or realrow) then
-				--GDKPd_Debug("ST_doOnclick not (row or realrow) sorting!");
+				--GDKPd_Debug("ST_doOnClick not (row or realrow) sorting!");
 				for i, col in ipairs(st.cols) do
 					if i ~= column then -- clear out all other sort marks
 						cols[i].sort = nil;
@@ -756,32 +757,32 @@ do
 				--check groupby default is off
 				if groupby == nil then
 					--do nothing, just call sortdata
-					--GDKPd_Debug("ST_doOnclick:groupby not passed!");					
+					--GDKPd_Debug("ST_doOnClick:groupby not passed!");					
 					table:SortData();
 				else
 					if groupby then
 						--do new groupby
-						--GDKPd_Debug("ST_doOnclick:group by class checked!");
+						--GDKPd_Debug("ST_doOnClick:group by class checked!");
 						table:SortData(groupby);
 					else
 						----do nothing, just call sortdata
-						--GDKPd_Debug("ST_doOnclick group by class not checked!");
+						--GDKPd_Debug("ST_doOnClick group by class not checked!");
 						table:SortData();
 					end	
 				end
 				
 
 			else
-				--GDKPd_Debug("ST_doOnclick row or realrow");
+				--GDKPd_Debug("ST_doOnClick row or realrow");
 				if table:GetSelection() == realrow then
 					if not disabledeselect then				--disable deselect in loot table
-						GDKPd_Debug("ST_doOnclick not disabledeselect");
+						GDKPd_Debug("ST_doOnClick not disabledeselect");
 						table:ClearSelection();
 					else 
-						GDKPd_Debug("ST_doOnclick disabledeselect"); -- do nothing in the loot table
+						GDKPd_Debug("ST_doOnClick disabledeselect"); -- do nothing in the loot table
 					end
 				else
-					--GDKPd_Debug("ST_doOnclick setselction");
+					--GDKPd_Debug("ST_doOnClick setselction");
 					table:SetSelection(realrow);
 				end
 			end
