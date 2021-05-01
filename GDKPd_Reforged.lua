@@ -128,7 +128,14 @@ StaticPopupDialogs["GDKPD_ADDTOPOT"] = {
 	end,
 	OnAccept=function(self)
 		GDKPd_PotData.potAmount = (tonumber(self.editBox:GetText()) or 0)+GDKPd_PotData.potAmount
-		tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
+		--tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
+
+	
+		local bid1 = tonumber(self.editBox:GetText()) or 0
+		local name = ""
+		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
+		GDKPd.itemCount = GDKPd.itemCount + 1
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustemnt", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Iron Grenade]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
@@ -463,6 +470,7 @@ status:SetBackdrop({
 	},
 })
 function status:UpdateVisibility(forceCombat)
+	
 --	if GDKPd.opt.hide then
 --		self:Hide()
 --		return
@@ -694,7 +702,7 @@ status.PotLogTable:EnableSelection(true);
 status.PotLogTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
 	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
-    	GDKPd:PotChanged();
+    	status:Update();
 		return true
 	end,
 })
@@ -758,9 +766,9 @@ l:SetStartPoint("TOPLEFT",20,-240)
 l:SetEndPoint("TOPLEFT",185,-240)
 
 -- ADD/ REMOVE GOLD
---[[status.add = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.add = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.add:SetSize(15,15)
-status.add:SetPoint("LEFT", status, "TOPLEFT",10,-200)
+status.add:SetPoint("LEFT", status, "TOPLEFT",130,-200)
 status.add:SetText("+")
 status.add:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_ADDTOPOT")
@@ -772,7 +780,7 @@ status.rem:SetText("-")
 status.rem:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_REMFROMPOT")
 end)
---]]
+
 
 --POST RULES
 status.rules = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -919,7 +927,6 @@ function status:UpdateSize()
 	end
 	self:SetHeight(height)
 end
-
 
 --------------------------------------------------------------------
 --- HISTORY FRAME
@@ -3454,6 +3461,8 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 				--LibStub("AceConfigDialog-3.0"):Open("GDKPd")
 				self:PotLogTableUpdate();
 				self.status:Show();
+				GDKPd:BossLootTableUpdate();
+
 				
 			end
 		end
@@ -3467,6 +3476,9 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 		self.playerBalance.header:SetPoint(self.opt.playerbalancepoint.point, UIParent, self.opt.playerbalancepoint.relative, self.opt.playerbalancepoint.x, self.opt.playerbalancepoint.y)
 		self.playerBalance:Update()
 		self.status:UpdateVisibility()
+		self.status.PotLogTable:SetSelection(1);
+
+
 	end
 	if (event == "CHAT_MSG_RAID") or (event == "CHAT_MSG_RAID_LEADER") or (event == "CHAT_MSG_RAID_WARNING") then
 		local msg,sender = arg[1],pruneCrossRealm(arg[2])
@@ -4055,6 +4067,11 @@ end
 -- UPDATE THE DISPLAYED GOLD --
 ---------------------
 function status:Update()
+
+	--Refresh the Loot list
+	GDKPd:BossLootTableUpdate();
+
+	--Refresh to the Pot value
 	local potAmount;
 	local lastDist;
 	if GDKPd:IsActivePotSelected() then
@@ -4073,17 +4090,7 @@ function status:Update()
 	else
 		status.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
 		status.potDistributeText:SetText("")
-
 	end
-end
-
----------------------
--- POT CHANGED --
----------------------
-function GDKPd:PotChanged()
-	GDKPd:BossLootTableUpdate();
-    status:Update();
-
 end
 
 ---------------------
