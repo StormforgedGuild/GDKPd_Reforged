@@ -550,6 +550,8 @@ local BossLootTableColDef = {
 };
 --Tooltip declaration
 status.itemtt = CreateFrame("GameTooltip", "GDKP_ItemTT", UIParent, "GameTooltipTemplate")
+--Tooltips are being wonky.. maybe this will stop the wonkiness
+status.itemtt:UnregisterAllEvents()
 
 --Boss Loot Table
 status.BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
@@ -4039,17 +4041,17 @@ function GDKPd:PotLogTableUpdate()
 end 
 
 function GDKPd:stringtodate(timeString)
-	monthShortTable={Jan=1,Feb=2,Mar=3,Apr=4,May=5,Jun=6,Jul=7,Aug=8,Sep=9,Oct=10,Nov=11,Dec=12}
+	local monthShortTable={Jan=1,Feb=2,Mar=3,Apr=4,May=5,Jun=6,Jul=7,Aug=8,Sep=9,Oct=10,Nov=11,Dec=12}
 	-- timeString = 'Sun Jan  7 09:42:54 2018'
 	-- This has no definition of time zone, Let's assume that it is in UTC.
 	-- Note that the os.time() function requires a table that is all numbers, so we
 	-- need to use the monthShortTable table defined in Initialize() to turn the
 	-- "Jan" into 1.
-	formatPattern = '^%a+%s+(%a+)%s+(%d+)%s+(%d+):(%d+):(%d+)%s+(%d+)$'
-	monthText, day, hour, min, sec, year = timeString:match(formatPattern)
-	month=monthShortTable[monthText]
+	local formatPattern = '^%a+%s+(%a+)%s+(%d+)%s+(%d+):(%d+):(%d+)%s+(%d+)$'
+	local monthText, day, hour, min, sec, year = timeString:match(formatPattern)
+	local month=monthShortTable[monthText]
 	
-	timeStamp = time({month=month, day=day, year=year, hour=hour, min=min, sec=sec, isdst=false})
+	local timeStamp = time({month=month, day=day, year=year, hour=hour, min=min, sec=sec, isdst=false})
 	
 	--formatedString = date('%A, %B %d, %Y at %I:%M:%S %p', timeStamp)
 	-- Just for cosmetics, strip off any leading zeros on the day, and on the hour.
@@ -4334,7 +4336,7 @@ function GDKPd:check4GroupFilters(classFilter)
 end
 function GDKPd:calculateLootTimeLeft (timeLooted)
 	local lootTime
-    lootTimeStamp = timeLooted;
+    local lootTimeStamp = timeLooted;
     local nowTimeStamp = time();
     -- GDKPd_Debug(date("%m/%d/%y %H:%M:%S", nowTimeStamp));
     -- GDKPd_Debug(date("%m/%d/%y %H:%M:%S", lootTimeStamp));
