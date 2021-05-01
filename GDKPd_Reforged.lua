@@ -4032,6 +4032,8 @@ function GDKPd:PotLogTableUpdate()
 		intCount = intCount + 1
 		PotLogTableData[intCount] = {i, date("%m/%d %H:%M", realdate), v["note"]};
 	end
+	intCount = intCount + 1
+	PotLogTableData[intCount] = {9999, date("%m/%d %H:%M", time()), "Active"};
 	table.sort(PotLogTableData, function(a, b) return (a[1] > b[1]); end);
 	status.PotLogTable:SetData(PotLogTableData, true);
 end 
@@ -4074,112 +4076,117 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
     local BossLootTableData = {};
     local potnum = status.PotLogTable:GetSelection()
 	local potID
-	local curPot = GDKPd_PotData.curPotHistory
+	local curPot
     local indexofsub1;
     local indexofsub2;
-	local classColor = "ff9d9d9d"
-	if #curPot == 0 then
-		GDKPd_Debug("BossLootTableData: no curpot")
-		GDKPd_Debug("BossLootTableData: set curPot to history")
-		if not (potnum) then 
-			status.PotLogTable:SetSelection(1);
-			potnum = status.PotLogTable:GetSelection()
-		end 
-		GDKPd_Debug("BosslootTableUpdate: potnum: " ..potnum)
-		potID = status.PotLogTable:GetCell(potnum, 1);
-		if #GDKPd_PotData["history"] == 0 then 
-			--no history
-			return
-		else
-			GDKPd_Debug("BossLootTableUpdate: potID: " ..potID)
-			curPot = GDKPd_PotData["history"][potID]["items"]
-		end 
-	end
-	if not(curPot) then 
-		GDKPd_Debug("BossLootTableData: pot not found!")
-		return 
-	end
+	
+	if not (potnum) then 
+		status.PotLogTable:SetSelection(1);
+		potnum = status.PotLogTable:GetSelection()
+	end 
+	GDKPd_Debug("BosslootTableUpdate: potnum: " ..potnum)
+	potID = status.PotLogTable:GetCell(potnum, 1);
+	if potID == 9999 then 
+		curPot = GDKPd_PotData.curPotHistory
+	elseif #GDKPd_PotData["history"] == 0 then 
+		--no history
+		GDKPd_Debug("BossLootTableData: no history")
+		return
+	else
+		GDKPd_Debug("BossLootTableUpdate: potID: " ..potID)
+		curPot = GDKPd_PotData["history"][potID]["items"]
+	end 
+
 	local index = 1;
 	local checkFilter
 	local hasFilter = filter
         --checkFilter = MRT_GUIFrame_BossLoot_Filter:GetText();
         --GDKPd_Debug("BossLootTableUpdate: checkFilter: " ..checkFilter);
-        if checkFilter == "" or checkFilter == nil then 
-            hasFilter = false
-        else 
-            hasFilter = true
-        end
-         
-        for i, v in ipairs(curPot) do
-            --BossLootTableData[index] = {i, v["ItemId"], "|c"..v["itemColor"]..v["itemName"].."|r", v["Looter"], v["DKPValue"], v["ItemLink"], v["Note"]};
-            -- SF: if unassigned, make it red.
-            
-            --Set Class Color
-            local playerClass, classFilename, classId = UnitClass(v["name"])
+	if checkFilter == "" or checkFilter == nil then 
+		hasFilter = false
+	else 
+		hasFilter = true
+	end
+    local classColor = "ff9d9d9d"     
+	if #curPot > 0 then 
+		for i, v in ipairs(curPot) do
+			--BossLootTableData[index] = {i, v["ItemId"], "|c"..v["itemColor"]..v["itemName"].."|r", v["Looter"], v["DKPValue"], v["ItemLink"], v["Note"]};
+			-- SF: if unassigned, make it red.
+			
+			--Set Class Color
+			GDKPd_Debug("BossLootTableUpdate: v['name']: "..v["name"])
+			local playerClass, classFilename, classId = UnitClass(v["name"])
+			if (playerClass) then 
+				GDKPd_Debug("BossLootTableUpdate: playerClass: "..playerClass)
+			else
+				GDKPd_Debug("BossLootTableUpdate: playerClass: isNull")
+			end
 			classColor = GDKPd:getClassColor(playerClass);  
-            --GDKPd_Debug("Row: "..v["itemName"])
-           --GDKPd_Debug("BossLootTableUpdate: elseif raidnum condition: looter: " ..v["Looter"] .."playerClass: "..playerClass..", classColor: " ..classColor);
-            
-            --GetDate 
-            local lootTime = GDKPd:calculateLootTimeLeft(v["ltime"])
+			GDKPd_Debug("BossLootTableUpdate: classColor: "..classColor)
+			--GDKPd_Debug("Row: "..v["itemName"])
+			--GDKPd_Debug("BossLootTableUpdate: elseif raidnum condition: looter: " ..v["Looter"] .."playerClass: "..playerClass..", classColor: " ..classColor);
+			
+			--GetDate 
+			local lootTime = GDKPd:calculateLootTimeLeft(v["ltime"])
 
-            --SetDoneState
-            --local doneState = SetDoneState(v["Looter"], v["Traded"], v["itemName"])
+			--SetDoneState
+			--local doneState = SetDoneState(v["Looter"], v["Traded"], v["itemName"])
 
-            if not hasFilter then
-                --GDKPd_Debug("BossLootTableUpdate: hasFilter: " ..tostring(hasFilter) .." false, so do regular stuff");
-                if v["Looter"] == "unassigned" then
+			if not hasFilter then
+				--GDKPd_Debug("BossLootTableUpdate: hasFilter: " ..tostring(hasFilter) .." false, so do regular stuff");
+				if v["Looter"] == "unassigned" then
 					BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
-                else 
+				else 
 					BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|c"..classColor..v["name"], v["bid"], v["item"], lootTime, doneState};
-                end 
-                index = index + 1;
-            else
-                --GDKPd_Debug("BossLootTableUpdate: hasFilter: " ..tostring(hasFilter) .." true, so filter list");
-                --[[ local checkFilter = filter;
-                if not checkFilter then
-                    checkFilter = MRT_GUIFrame_BossLoot_Filter:GetText();
-                end  ]]
-                -- need function here to return true if there are classes to filter
-                --local strFilter, isSpecialFilter = parseFilter4Special(checkFilter); 
-                local strFilter, isSpecialFilter = GDKPd:parseFilter4Classes(checkFilter);
-                if isSpecialFilter then
-                    -- if there are classes or special to filter check for which classes
-                    -- checking if class is in the classfilter list
-                    -- new function to return true if class is in classfilter table.
-                    -- old code: indexofsub = substr(v["Class"], strFilter);
-                    -- old code: if not indexofsub then
-                    local tblSpecialFilter = GDKPd:check4GroupFilters(strFilter);
-                    --tblSpecialFilter = filter out list.
+				end 
+				index = index + 1;
+			else
+				--GDKPd_Debug("BossLootTableUpdate: hasFilter: " ..tostring(hasFilter) .." true, so filter list");
+				--[[ local checkFilter = filter;
+				if not checkFilter then
+					checkFilter = MRT_GUIFrame_BossLoot_Filter:GetText();
+				end  ]]
+				-- need function here to return true if there are classes to filter
+				--local strFilter, isSpecialFilter = parseFilter4Special(checkFilter); 
+				local strFilter, isSpecialFilter = GDKPd:parseFilter4Classes(checkFilter);
+				if isSpecialFilter then
+					-- if there are classes or special to filter check for which classes
+					-- checking if class is in the classfilter list
+					-- new function to return true if class is in classfilter table.
+					-- old code: indexofsub = substr(v["Class"], strFilter);
+					-- old code: if not indexofsub then
+					local tblSpecialFilter = GDKPd:check4GroupFilters(strFilter);
+					--tblSpecialFilter = filter out list.
 
-                    if not (GDKPd:isLooterInSpecialFilter(v["Looter"], tblSpecialFilter)) then
-                        --skip no special matches so don't do anything.
-                    else 
-                        --special match found so include in table
-                        if v["Looter"] == "unassigned" then
-                            BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
-                        else 
-                            BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|c"..classColor..v["name"], v["bid"], v["item"], lootTime, doneState};
-                        end 
-                        index = index + 1;
-                    end
-                else -- if not special filter, do the normal thing 
-                    indexofsub1 = substr(v["itemName"], checkFilter);
-                    indexofsub2 = substr(v["Looter"], checkFilter);
-                    if not indexofsub1 and not indexofsub2 then
-                        --skip
-                    else
-                        ---
-                        if v["name"] == "unassigned" then
-                            BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
-                        else 
-                            BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|c"..classColor..v["name"], v["bid"], v["item"], lootTime, doneState};
-                        end 
-                        index = index + 1;
-                    end
-                end
-            end
-        end
+					if not (GDKPd:isLooterInSpecialFilter(v["Looter"], tblSpecialFilter)) then
+						--skip no special matches so don't do anything.
+					else 
+						--special match found so include in table
+						if v["Looter"] == "unassigned" then
+							BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
+						else 
+							BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|c"..classColor..v["name"], v["bid"], v["item"], lootTime, doneState};
+						end 
+						index = index + 1;
+					end
+				else -- if not special filter, do the normal thing 
+					indexofsub1 = substr(v["itemName"], checkFilter);
+					indexofsub2 = substr(v["Looter"], checkFilter);
+					if not indexofsub1 and not indexofsub2 then
+						--skip
+					else
+						---
+						if v["name"] == "unassigned" then
+							BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
+						else 
+							BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|c"..classColor..v["name"], v["bid"], v["item"], lootTime, doneState};
+						end 
+						index = index + 1;
+					end
+				end
+			end
+		end
+	end
     
     table.sort(BossLootTableData, function(a, b) return (a[3] < b[3]); end);
     --BossLootTable:ClearSelection();
