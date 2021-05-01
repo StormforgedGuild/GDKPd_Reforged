@@ -309,19 +309,19 @@ do
 			i = i + 1;
 		end
 		if sortby then
-			--MRT_Debug("ST:SortData: sortby true");
-			--MRT_Debug("ST:SortData:sortby = " ..sortby);
+			--GDKPd_Debug("ST:SortData: sortby true");
+			--GDKPd_Debug("ST:SortData:sortby = " ..sortby);
 			table.sort(self.sorttable, function(rowa, rowb)
 				local column = self.cols[sortby];
 				if column.CompareSort then
-					--MRT_Debug("ST:SortData:sortby:CompareSort = true");
+					--GDKPd_Debug("ST:SortData:sortby:CompareSort = true");
 					return column.CompareSort(self, rowa, rowb, sortby);
 				else
-					--MRT_Debug("ST:SortData:sortby:CompareSort = false");
+					--GDKPd_Debug("ST:SortData:sortby:CompareSort = false");
 					if (groupby == nil) or not groupby then
 						return self:CompareSort(rowa, rowb, sortby);
 					else
-						--MRT_Debug("ST:SortData:groupby");
+						--GDKPd_Debug("ST:SortData:groupby");
 						return self:CompareSort(rowa, rowb, sortby, groupby);
 					end
 				end
@@ -345,20 +345,20 @@ do
 	-- @usage used internally.
 	-- @see Core.lua
 	local function CompareSort (self, rowa, rowb, sortbycol, groupby)
-		--MRT_Debug("ST:CompareSort Called!");
+		--GDKPd_Debug("ST:CompareSort Called!");
 		local cella, cellb = self:GetCell(rowa, sortbycol), self:GetCell(rowb, sortbycol);
 		local a1, b1 = cella, cellb;
 		local a2, b2
 		if groupby == nil or not groupby then
 			--do nothing
 		else
-			--MRT_Debug("ST:CompareSort: groupby is true");
+			--GDKPd_Debug("ST:CompareSort: groupby is true");
 			local cella2, cellb2 = self:GetCell(rowa, 5), self:GetCell(rowb, 5);
 			if not cella2 then cella2="Unknown" end;
 			if not cellb2 then callb2="Unknown" end;
 			a2, b2 = cella2, cellb2
-			--MRT_Debug("ST:CompareSort: groupby a2 == " ..a2);
-			--MRT_Debug("ST:CompareSort: groupby b2 == " ..b2);
+			--GDKPd_Debug("ST:CompareSort: groupby a2 == " ..a2);
+			--GDKPd_Debug("ST:CompareSort: groupby b2 == " ..b2);
 		end
 		if type(a1) == 'table' then
 			a1 = a1.value;
@@ -366,8 +366,8 @@ do
 		if type(b1) == 'table' then
 			b1 = b1.value;
 		end
-		--MRT_Debug("ST:CompareSort: type of a1 is " ..type(a1));
-		--MRT_Debug("ST:CompareSort: type of b2 is " ..type(b1));
+		--GDKPd_Debug("ST:CompareSort: type of a1 is " ..type(a1));
+		--GDKPd_Debug("ST:CompareSort: type of b2 is " ..type(b1));
 		local column = self.cols[sortbycol];
 
 		if type(a1) == "function" then
@@ -418,7 +418,7 @@ do
 			a1, b1 = cleanString(a1), cleanString(b1);
 			--check for time sort
 			--call it some function
-			--MRT_Debug("ST:CompareSort: a1: " ..a1.." b1: " ..b1);
+			--GDKPd_Debug("ST:CompareSort: a1: " ..a1.." b1: " ..b1);
 			a1, b1 = stringTimetonumberTime(a1), stringTimetonumberTime(b1);
 		end
 		if (groupby == nil) or not groupby then
@@ -447,7 +447,7 @@ do
 			end
 		else
 			--do group by
-			--MRT_Debug("ST:CompareSort: calling ststorbyclass");
+			--GDKPd_Debug("ST:CompareSort: calling ststorbyclass");
 			local direction = column.sort or column.defaultsort or "asc";
 			return stsortbyclass(a1, b1, a2, b2, direction)
 		end
@@ -455,9 +455,9 @@ do
 	function stringTimetonumberTime(sText1)
 		local retVal1
 		local cIndex = strfind(sText1, ":")
-		--MRT_Debug("ST:stringTimetonumberTime: Called!");
-		--MRT_Debug("ST:stringTimetonumberTime: sText" ..sText1);
-		if (cIndex) then MRT_Debug("ST:stringTimetonumberTime: cIndex" ..cIndex);end
+		--GDKPd_Debug("ST:stringTimetonumberTime: Called!");
+		--GDKPd_Debug("ST:stringTimetonumberTime: sText" ..sText1);
+		if (cIndex) then GDKPd_Debug("ST:stringTimetonumberTime: cIndex" ..cIndex);end
 		if not cIndex then
 			local isNum = string.find(sText1, "%d")
 			if not isNum then 
@@ -475,12 +475,12 @@ do
 		if not sH or sH == "" then
 			sH = 0;
 		end
-		--MRT_Debug("ST:stringTimetonumberTime: sH: " ..sH);
+		--GDKPd_Debug("ST:stringTimetonumberTime: sH: " ..sH);
 		sM = string.sub(sText,cIndex+1)
 		if not sM or sM == "" then
 			sM = 0
 		end
-		--MRT_Debug("ST:stringTimetonumberTime: sM: " ..sM);
+		--GDKPd_Debug("ST:stringTimetonumberTime: sM: " ..sM);
 		return (tonumber(sH)*60) + tonumber(sM);
 	end
 
@@ -490,23 +490,23 @@ do
 		if not keepCase then 
 			sText = string.lower(strText);
 		else
-			--MRT_Debug("ST:CleanString keepCase");
+			--GDKPd_Debug("ST:CleanString keepCase");
 			sText = strText;
 		end 
 		local strFound = strfind(sText, "|c")
 		if not strFound then
 			return sText;
 		else
-			--MRT_Debug("ST:CleanString:format found, stripping")
-			--MRT_Debug("ST:CleanString:string.sub(sText,11)" ..string.sub(sText,11));
+			--GDKPd_Debug("ST:CleanString:format found, stripping")
+			--GDKPd_Debug("ST:CleanString:string.sub(sText,11)" ..string.sub(sText,11));
 			return string.sub(sText, 11);
 		end
 	end
 	function stsortbyclass (a1, b1, a2, b2, direction)
-		--MRT_Debug("ST:stsortbyclass: a1, b1, a2, b2, " ..a1.." "..b1.." "..a2.." "..b2);
+		--GDKPd_Debug("ST:stsortbyclass: a1, b1, a2, b2, " ..a1.." "..b1.." "..a2.." "..b2);
 		if a2 == b2 then
-			--MRT_Debug("ST:stsortbyclass: a2 == b2");
-			--MRT_Debug("ST:stsortbyclass: direction == " ..direction);
+			--GDKPd_Debug("ST:stsortbyclass: a2 == b2");
+			--GDKPd_Debug("ST:stsortbyclass: direction == " ..direction);
 			if direction:lower() == "asc" then
 				return a1 > b1;
 			else
@@ -691,10 +691,10 @@ do
 		self.data = data;
 		--SF: skipsort so that we don't do goofy sort
 		if (skipsort == nil) or (not skipsort) then
-			--MRT_Debug("STSetData: skipsort == false ");
+			--GDKPd_Debug("STSetData: skipsort == false ");
 			self:SortData();
 		else 
-			--MRT_Debug("STSetData: skipsort ==True ");
+			--GDKPd_Debug("STSetData: skipsort ==True ");
 			self:Refresh();
 		end
 	end
@@ -735,12 +735,12 @@ do
 
 	
 	function doOnClick(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, disabledeselect, groupby, ...)
-		--MRT_Debug("ST_doOnclick fired!");
+		--GDKPd_Debug("ST_doOnclick fired!");
 		st = table;
 		if button == "LeftButton" then	-- LS: only handle on LeftButton click (right passes thru)
-			--MRT_Debug("ST_doOnclick button == Leftbutton");
+			--GDKPd_Debug("ST_doOnclick button == Leftbutton");
 			if not (row or realrow) then
-				--MRT_Debug("ST_doOnclick not (row or realrow) sorting!");
+				--GDKPd_Debug("ST_doOnclick not (row or realrow) sorting!");
 				for i, col in ipairs(st.cols) do
 					if i ~= column then -- clear out all other sort marks
 						cols[i].sort = nil;
@@ -756,32 +756,32 @@ do
 				--check groupby default is off
 				if groupby == nil then
 					--do nothing, just call sortdata
-					--MRT_Debug("ST_doOnclick:groupby not passed!");					
+					--GDKPd_Debug("ST_doOnclick:groupby not passed!");					
 					table:SortData();
 				else
 					if groupby then
 						--do new groupby
-						--MRT_Debug("ST_doOnclick:group by class checked!");
+						--GDKPd_Debug("ST_doOnclick:group by class checked!");
 						table:SortData(groupby);
 					else
 						----do nothing, just call sortdata
-						--MRT_Debug("ST_doOnclick group by class not checked!");
+						--GDKPd_Debug("ST_doOnclick group by class not checked!");
 						table:SortData();
 					end	
 				end
 				
 
 			else
-				--MRT_Debug("ST_doOnclick row or realrow");
+				--GDKPd_Debug("ST_doOnclick row or realrow");
 				if table:GetSelection() == realrow then
 					if not disabledeselect then				--disable deselect in loot table
-						MRT_Debug("ST_doOnclick not disabledeselect");
+						GDKPd_Debug("ST_doOnclick not disabledeselect");
 						table:ClearSelection();
 					else 
-						MRT_Debug("ST_doOnclick disabledeselect"); -- do nothing in the loot table
+						GDKPd_Debug("ST_doOnclick disabledeselect"); -- do nothing in the loot table
 					end
 				else
-					--MRT_Debug("ST_doOnclick setselction");
+					--GDKPd_Debug("ST_doOnclick setselction");
 					table:SetSelection(realrow);
 				end
 			end
@@ -858,7 +858,7 @@ do
 				return true;
 			end,
 			["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, ...)		-- LS: added "button" argument
-				--MRT_Debug("ST_Onclick fired!");
+				--GDKPd_Debug("ST_Onclick fired!");
 				doOnClick(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, ...);
 				return true;
 				--[[ if button == "LeftButton" then	-- LS: only handle on LeftButton click (right passes thru)

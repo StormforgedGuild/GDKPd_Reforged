@@ -613,9 +613,9 @@ status.bidLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.bidLootFont:SetText("Bid")
 status.bidLoot:SetFontString(status.bidLootFont)
 status.bidLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 462, -28);
-status.bidLoot:SetScript("OnClick", function() bidLoot_click(); end);
+status.bidLoot:SetScript("OnClick", function() GDKPd:bidLoot_click(); end);
 
-function bidLoot_click()
+function GDKPd:bidLoot_click()
 	
     local loot_select = status.BossLootTable:GetSelection();
     if (loot_select == nil) then
@@ -2322,7 +2322,7 @@ function GDKPd:AddItemToPot(link, bid, bname, select)
 	GDKPd_Debug("AddItemToPot: link: " ..itemlink)
 	GDKPd_Debug("AddItemToPot: bid: " ..tostring(bid1))
 	GDKPd_Debug("AddItemToPot: lootername: " ..name)
-	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = GetDetailedItemInformation(link);
+	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = GDKPd:GetDetailedItemInformation(link);
 	GDKPd.itemCount = GDKPd.itemCount + 1
 	tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
 	local loottable = GDKPd:BossLootTableUpdate()
@@ -3443,7 +3443,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			if (cmd and cmd == "auction") and link then
 				--call DoAuction
 				self:AddItemToPot(link, 0, "unassigned", true)
-				bidLoot_click()
+				GDKPd:bidLoot_click()
 				--[[ if self:PlayerIsML((UnitName("player")),true) then
 					for itemLink in string.gmatch(link, "|c........|Hitem:.-|r") do
 						local itemID = tonumber(itemLink:match("|Hitem:(%d+):"))
@@ -3892,7 +3892,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			-- SF: hack to assign to disenchanted playerName = "disenchanted";
 			GDKPd_Debug("Item looted - Looter is "..playerName.." and loot is "..itemLink);
 			--cache the item
-			local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = GetDetailedItemInformation(itemLink);
+			local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = GDKPd:GetDetailedItemInformation(itemLink);
 			--if itemRarity is green (2) or better add
 			--if 1 < itemRarity then 
 			GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName.. " itemRarity: " ..itemRarity.. " GDKPd.opt.minQualityTracking: " ..GDKPd.opt.minQualityTracking)
@@ -3907,7 +3907,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 	arg:Release()
 end)
 
-function GetDetailedItemInformation(itemIdentifier)
+function GDKPd:GetDetailedItemInformation(itemIdentifier)
 	local MRT_ItemColors = {
 		[1] = "ff9d9d9d",  -- poor
 		[2] = "ffffffff",  -- common
@@ -4028,7 +4028,7 @@ function GDKPd:PotLogTableUpdate()
 	local intCount = 0
 	for i, v in ipairs(GDKPd_PotData["history"]) do
 		--MRT_GUI_RaidLogTableData[i] = {i, date("%m/%d %H:%M", v["StartTime"]), v["RaidZone"], v["RaidSize"]};
-		local realdate = stringtodate(v["date"])
+		local realdate = GDKPd:stringtodate(v["date"])
 		intCount = intCount + 1
 		PotLogTableData[intCount] = {i, date("%m/%d %H:%M", realdate), v["note"]};
 	end
@@ -4036,7 +4036,7 @@ function GDKPd:PotLogTableUpdate()
 	status.PotLogTable:SetData(PotLogTableData, true);
 end 
 
-function stringtodate(timeString)
+function GDKPd:stringtodate(timeString)
 	monthShortTable={Jan=1,Feb=2,Mar=3,Apr=4,May=5,Jun=6,Jul=7,Aug=8,Sep=9,Oct=10,Nov=11,Dec=12}
 	-- timeString = 'Sun Jan  7 09:42:54 2018'
 	-- This has no definition of time zone, Let's assume that it is in UTC.
@@ -4116,12 +4116,12 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
             
             --Set Class Color
             local playerClass, classFilename, classId = UnitClass(v["name"])
-			classColor = getClassColor(playerClass);  
+			classColor = GDKPd:getClassColor(playerClass);  
             --GDKPd_Debug("Row: "..v["itemName"])
            --GDKPd_Debug("BossLootTableUpdate: elseif raidnum condition: looter: " ..v["Looter"] .."playerClass: "..playerClass..", classColor: " ..classColor);
             
             --GetDate 
-            local lootTime = calculateLootTimeLeft(v["ltime"])
+            local lootTime = GDKPd:calculateLootTimeLeft(v["ltime"])
 
             --SetDoneState
             --local doneState = SetDoneState(v["Looter"], v["Traded"], v["itemName"])
@@ -4142,17 +4142,17 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
                 end  ]]
                 -- need function here to return true if there are classes to filter
                 --local strFilter, isSpecialFilter = parseFilter4Special(checkFilter); 
-                local strFilter, isSpecialFilter = parseFilter4Classes(checkFilter);
+                local strFilter, isSpecialFilter = GDKPd:parseFilter4Classes(checkFilter);
                 if isSpecialFilter then
                     -- if there are classes or special to filter check for which classes
                     -- checking if class is in the classfilter list
                     -- new function to return true if class is in classfilter table.
                     -- old code: indexofsub = substr(v["Class"], strFilter);
                     -- old code: if not indexofsub then
-                    local tblSpecialFilter = check4GroupFilters(strFilter);
+                    local tblSpecialFilter = GDKPd:check4GroupFilters(strFilter);
                     --tblSpecialFilter = filter out list.
 
-                    if not (isLooterInSpecialFilter(v["Looter"], tblSpecialFilter)) then
+                    if not (GDKPd:isLooterInSpecialFilter(v["Looter"], tblSpecialFilter)) then
                         --skip no special matches so don't do anything.
                     else 
                         --special match found so include in table
@@ -4192,7 +4192,7 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
 	return BossLootTableData
 end
 
-function isLooterInSpecialFilter(looter, specialFilter)
+function GDKPd:isLooterInSpecialFilter(looter, specialFilter)
     --return if looter is not in special filter
     --GDKPd_Debug("isLooterInSpecialFilter:Called!");
     GDKPd_Debug("isLooterInSpecialFilter: # of items: "..table.maxn(specialFilter));
@@ -4208,7 +4208,34 @@ function isLooterInSpecialFilter(looter, specialFilter)
     return true;
 end
 
-function parseFilter4Classes(strText)
+function GDKPd:getClassColor(class)
+    local classColor = "ff9d9d9d";
+    if class == "Hunter"
+    then classColor = "ffA9D271";
+    elseif class == "Druid"
+    then classColor = "ffFF7D0A";   
+    elseif class == "Mage"
+    then classColor = "ff40C7EB";   
+    elseif class == "Paladin"
+    then classColor = "ffF58CBA";   
+    elseif class == "Rogue"
+    then classColor = "ffFFF569";   
+    elseif class == "Warlock"
+    then classColor = "ff8787ED";   
+    elseif class == "Warrior"
+    then classColor = "ffC79C6E";   
+    elseif class == "Shaman"
+    then classColor = "ff0070DE";   
+    elseif class == "Priest"
+    then classColor = "ffffffff";
+    elseif class == "bank"
+    then classColor = "ff9d8e8d";
+    elseif class == "disenchanted"
+    then classColor = "ff9d8e8d";
+    end 
+    return classColor;
+end
+function GDKPd:parseFilter4Classes(strText)
     --GDKPd_Debug("parseFilter4Classes called!");
     classFilters = {}
     local retVal = string.gsub(strText, " ", "")
@@ -4230,7 +4257,7 @@ function parseFilter4Classes(strText)
     end
 end
 
-function check4GroupFilters(classFilter)
+function GDKPd:check4GroupFilters(classFilter)
     GDKPd_Debug("check4GroupFilters: called!");
 
     local sgroupFilters = {
@@ -4263,7 +4290,7 @@ function check4GroupFilters(classFilter)
     end
     return oclassFilter
 end
-function calculateLootTimeLeft (timeLooted)
+function GDKPd:calculateLootTimeLeft (timeLooted)
 	local lootTime
     lootTimeStamp = timeLooted;
     local nowTimeStamp = time();
