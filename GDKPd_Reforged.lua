@@ -816,13 +816,13 @@ status.distribute:SetScript("OnClick", function(self)
 end)
 
 --ATTENDEES TABLE
-local MRT_RaidAttendeesTableColDef = {
+local GDKPd_RaidAttendeesTableColDef = {
     {["name"] = "", ["width"] = 1},                            -- invisible column for storing the player number index from the raidlog-table
     {["name"] = "Name", ["width"] = 100},
     {["name"] = "$$$", ["width"] = 40},
 };
 
-MRT_GUI_AttendeesTable = ScrollingTable:CreateST(MRT_RaidAttendeesTableColDef,18, 10, nil, status);           
+MRT_GUI_AttendeesTable = ScrollingTable:CreateST(GDKPd_RaidAttendeesTableColDef,18, 10, nil, status);           
 MRT_GUI_AttendeesTable.head:SetHeight(15);                                                                    
 MRT_GUI_AttendeesTable.frame:SetPoint("TOPLEFT", status.rules, "BOTTOMLEFT", 0 , -20);
 MRT_GUI_AttendeesTable:EnableSelection(true);
@@ -4066,6 +4066,41 @@ end
 ---------------------
 function GDKPd:PotChanged()
 	GDKPd:BossLootTableUpdate();
+
+	local potAmount;
+	local lastDist;
+	if GDKPd:IsActivePotSelected() then
+		GDKPd_Debug("Active pot selected")
+
+		potAmount = (GDKPd_PotData.potAmount or 0)
+		lastDist = (GDKPd_PotData.prevDist or 0)
+	else
+		GDKPd_Debug("Non-active pot selected")
+		potAmount = 55
+		lastDist = 44
+	end
+	if lastDist > 0 then
+		status.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
+		status.potDistributeText:SetText(L[" |cffaa0000(Distribute: %dg)|r"]:format(potAmount-lastDist))
+	else
+		status.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
+	end
+end
+
+
+---------------------
+-- IsActivePotSelected--
+---------------------
+function GDKPd:IsActivePotSelected()
+
+	local potnum = status.PotLogTable:GetSelection()
+	potID = status.PotLogTable:GetCell(potnum, 1);
+	if potID == 9999 then 
+		return true
+	else
+		return false
+	end
+
 end
 
 ---------------------
