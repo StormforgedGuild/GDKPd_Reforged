@@ -802,6 +802,7 @@ status.distribute:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 268)
 status.distribute:SetText("Distribute")
 status.distribute:SetScript("OnClick", function(self)
 	GDKPd:DistributePot()
+	status:Update()
 end)
 
 -- ADD/ REMOVE GOLD FROM PLAYERS
@@ -2005,6 +2006,7 @@ function playerBalance:Update()
 	end
 	self:SetHeight(size)
 	self:UpdateVisibility()
+	status:Update()
 end
 GDKPd.exportframe = CreateFrame("Frame", "GDKPd_Export", UIParent)
 local export = GDKPd.exportframe
@@ -3465,7 +3467,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 				self:PotLogTableUpdate();
 				status.PotLogTable:SetSelection(1)
 				self.status:Show();
-				status:Update();
+				self.status:Update();
 
 				
 			end
@@ -3813,6 +3815,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 		self.tradeMoneySelf = 0
 		self.tradeMoneyOther = 0
 		self.balance:Update()
+		status.Update()
 	end
 	if (event == "TRADE_ACCEPT_UPDATE") and (arg[1] == 1) then
 		self.tradeMoneySelf = GetPlayerTradeMoney()/10000
@@ -4124,16 +4127,19 @@ function GDKPd:PlayerBalanceTableUpdate()
 	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: method fired!")
 	local PlayerBalanceTableData = {};
 	local intCount = 0
-	local classColor = "ff9d9d9d"
 	local curBalance = GDKPd_PotData.playerBalance 
-	local costColor = "|cff61ff5a"
+	
 
 	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: #playerBalance: " ..#curBalance)
 	for i, v in pairs(curBalance) do
 		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: inside for" )
 		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: i: " ..i)
 		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: v: " ..v)
-		if substr(v,"-") then
+		local classColor = "ff9d9d9d"
+		local costColor = "|cff61ff5a"
+		local balance = tonumber(v)
+		if balance < 0 then
+			GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: balance: " ..balance)
 			costColor = "|cffff0000"
 		end
 		classColor = GDKPd:getClassColorFromName(i)
@@ -4146,8 +4152,9 @@ function GDKPd:PlayerBalanceTableUpdate()
 	status.PlayerBalanceTable:SetData(PlayerBalanceTableData, true);
 end
 
-
-
+--------------
+-- PlayerDb --
+--------------
 
 ---------------------
 -- Boss Loot Table --
