@@ -742,7 +742,6 @@ status.potText:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 status.potText:SetTextColor(1,1,1)
 status.potText:SetPoint("TOPLEFT", status.potAdjustLabel, "BOTTOMLEFT", 0, -10)
 status.potText:SetJustifyH("LEFT")
-status.potText:SetText(L["You have looted a monster!\nDo you want GDKPd to announce loot?"])
 
 status.potDistributeText = status:CreateFontString()
 status.potDistributeText:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
@@ -920,18 +919,7 @@ function status:UpdateSize()
 	end
 	self:SetHeight(height)
 end
-function status:Update()
-	local potAmount = (GDKPd_PotData.potAmount or 0)
-	local lastDist = (GDKPd_PotData.prevDist or 0)
-	if lastDist > 0 then
-		self.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
-		self.potDistributeText:SetText(L[" |cffaa0000(Distribute: %dg)|r"]:format(potAmount-lastDist))
 
-	else
-		self.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
-	end
-	self:UpdateSize()
-end
 
 --------------------------------------------------------------------
 --- HISTORY FRAME
@@ -3414,7 +3402,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 		setmetatable(GDKPd_PotData.playerBalance, {__index=function() return 0 end})
 		GDKPd_BalanceData = GDKPd_BalanceData or {}
 		setmetatable(GDKPd_BalanceData, {__index=function() return 0 end})
-		self.status:Update()
+--		self.status:Update()
 		self.db = LibStub("AceDB-3.0"):New("GDKPd_DB", defaults or {})
 		self.db.RegisterCallback(self,"OnProfileChanged","OnProfileEnable")
 		self.db.RegisterCallback(self,"OnProfileCopied","OnProfileEnable")
@@ -4064,11 +4052,9 @@ end
 
 
 ---------------------
--- POT CHANGED --
+-- UPDATE THE DISPLAYED GOLD --
 ---------------------
-function GDKPd:PotChanged()
-	GDKPd:BossLootTableUpdate();
-
+function status:Update()
 	local potAmount;
 	local lastDist;
 	if GDKPd:IsActivePotSelected() then
@@ -4086,17 +4072,28 @@ function GDKPd:PotChanged()
 		status.potDistributeText:SetText(L[" |cffaa0000(Distribute: %dg)|r"]:format(potAmount-lastDist))
 	else
 		status.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
+		status.potDistributeText:SetText("")
+
 	end
 end
 
+---------------------
+-- POT CHANGED --
+---------------------
+function GDKPd:PotChanged()
+	GDKPd:BossLootTableUpdate();
+    status:Update();
+
+end
 
 ---------------------
 -- IsActivePotSelected--
 ---------------------
 function GDKPd:IsActivePotSelected()
 
-	local potnum = status.PotLogTable:GetSelection()
-	potID = status.PotLogTable:GetCell(potnum, 1);
+	potnum = status.PotLogTable:GetSelection()
+	local potID = status.PotLogTable:GetCell(potnum, 1);
+
 	if potID == 9999 then 
 		return true
 	else
