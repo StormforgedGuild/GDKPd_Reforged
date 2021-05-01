@@ -548,9 +548,10 @@ local BossLootTableColDef = {
 --    end,
     },                  
 };
---Tooltip definition
+--Tooltip declaration
 status.itemtt = CreateFrame("GameTooltip", "GDKP_ItemTT", UIParent, "GameTooltipTemplate")
 
+--Boss Loot Table
 status.BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
 status.BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
 status.BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -75);
@@ -679,6 +680,7 @@ end)
 
 --RAID LOG TABLE
 local PotLogTableColDef = {
+	{["name"] = "", ["width"] = 1}, --invisible item for pot index
     {["name"] = "Date", ["width"] = 75},
     {["name"] = "Name", ["width"] = 65},
 };
@@ -2320,7 +2322,7 @@ function GDKPd:AddItemToPot(link, bid, bname, select)
 	GDKPd_Debug("AddItemToPot: link: " ..itemlink)
 	GDKPd_Debug("AddItemToPot: bid: " ..tostring(bid1))
 	GDKPd_Debug("AddItemToPot: lootername: " ..name)
-	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(link);
+	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = GetDetailedItemInformation(link);
 	GDKPd.itemCount = GDKPd.itemCount + 1
 	tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
 	local loottable = GDKPd:BossLootTableUpdate()
@@ -3890,7 +3892,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			-- SF: hack to assign to disenchanted playerName = "disenchanted";
 			GDKPd_Debug("Item looted - Looter is "..playerName.." and loot is "..itemLink);
 			--cache the item
-			local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = MRT_GetDetailedItemInformation(itemLink);
+			local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = GetDetailedItemInformation(itemLink);
 			--if itemRarity is green (2) or better add
 			--if 1 < itemRarity then 
 			GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName.. " itemRarity: " ..itemRarity.. " GDKPd.opt.minQualityTracking: " ..GDKPd.opt.minQualityTracking)
@@ -3905,7 +3907,18 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 	arg:Release()
 end)
 
-function MRT_GetDetailedItemInformation(itemIdentifier)
+function GetDetailedItemInformation(itemIdentifier)
+	local MRT_ItemColors = {
+		[1] = "ff9d9d9d",  -- poor
+		[2] = "ffffffff",  -- common
+		[3] = "ff1eff00",  -- uncommon
+		[4] = "ff0070dd",  -- rare
+		[5] = "ffa335ee",  -- epic
+		[6] = "ffff8000",  -- legendary
+		[7] = "ffe6cc80",  -- artifact / heirloom
+		[8] = "ffe6cc80",
+	}
+	
 	GDKPd_Debug("GetDetailedItemInformation: itemIdentifier: " ..itemIdentifier)
     local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice, itemClassID, itemSubClassID = GetItemInfo(itemIdentifier);
     if (not itemLink) then return nil; end
@@ -3914,16 +3927,6 @@ function MRT_GetDetailedItemInformation(itemIdentifier)
     local itemColor = MRT_ItemColors[itemRarity + 1];
     return itemName, itemLink, itemId, itemString, itemRarity, itemColor, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice, itemClassID, itemSubClassID;
 end
-MRT_ItemColors = {
-    [1] = "ff9d9d9d",  -- poor
-    [2] = "ffffffff",  -- common
-    [3] = "ff1eff00",  -- uncommon
-    [4] = "ff0070dd",  -- rare
-    [5] = "ffa335ee",  -- epic
-    [6] = "ffff8000",  -- legendary
-    [7] = "ffe6cc80",  -- artifact / heirloom
-    [8] = "ffe6cc80",
-}
 
 GDKPd:RegisterEvent("ADDON_LOADED")
 GDKPd:RegisterEvent("CHAT_MSG_RAID")
@@ -4014,16 +4017,20 @@ C_ChatInfo.RegisterAddonMessagePrefix("GDKPD VREQ")
 C_ChatInfo.RegisterAddonMessagePrefix("GDKPD VDATA")
 C_ChatInfo.RegisterAddonMessagePrefix("GDKPD MANADJ")
 --prefixes done
+
+
 ------------------
 --Pot Log Table --
 ------------------
 function GDKPd:PotLogTableUpdate()
 	local PotLogTableData = {};
 	-- insert reverse order
+	local intCount = 0
 	for i, v in ipairs(GDKPd_PotData["history"]) do
 		--MRT_GUI_RaidLogTableData[i] = {i, date("%m/%d %H:%M", v["StartTime"]), v["RaidZone"], v["RaidSize"]};
 		local realdate = stringtodate(v["date"])
-		PotLogTableData[i] = {date("%m/%d %H:%M", realdate), v["note"]};
+		intCount = intCount + 1
+		PotLogTableData[intCount] = {i, date("%m/%d %H:%M", realdate), v["note"]};
 	end
 	table.sort(PotLogTableData, function(a, b) return (a[1] > b[1]); end);
 	status.PotLogTable:SetData(PotLogTableData, true);
@@ -4058,9 +4065,11 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
     GDKPd_Debug("BossLootTableUpdate Fired!")
     local BossLootTableData = {};
     local potnum = status.PotLogTable:GetSelection()
+	local potID
 	local curPot = GDKPd_PotData.curPotHistory
     local indexofsub1;
     local indexofsub2;
+	local classColor = "ff9d9d9d"
 	if #curPot == 0 then
 		GDKPd_Debug("BossLootTableData: no curpot")
 		GDKPd_Debug("BossLootTableData: set curPot to history")
@@ -4069,11 +4078,13 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
 			potnum = status.PotLogTable:GetSelection()
 		end 
 		GDKPd_Debug("BosslootTableUpdate: potnum: " ..potnum)
+		potID = status.PotLogTable:GetCell(potnum, 1);
 		if #GDKPd_PotData["history"] == 0 then 
 			--no history
 			return
 		else
-			curPot = GDKPd_PotData["history"][potnum]["items"]
+			GDKPd_Debug("BossLootTableUpdate: potID: " ..potID)
+			curPot = GDKPd_PotData["history"][potID]["items"]
 		end 
 	end
 	if not(curPot) then 
@@ -4096,14 +4107,13 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
             -- SF: if unassigned, make it red.
             
             --Set Class Color
-            classColor = "ff9d9d9d";
-            local playerClass = getPlayerClass(v["name"]);   
-            classColor = getClassColor(playerClass);  
+            local playerClass, classFilename, classId = UnitClass(v["name"])
+			classColor = getClassColor(playerClass);  
             --GDKPd_Debug("Row: "..v["itemName"])
            --GDKPd_Debug("BossLootTableUpdate: elseif raidnum condition: looter: " ..v["Looter"] .."playerClass: "..playerClass..", classColor: " ..classColor);
             
             --GetDate 
-            loottime = calculateLootTimeLeft(v["ltime"])
+            local lootTime = calculateLootTimeLeft(v["ltime"])
 
             --SetDoneState
             --local doneState = SetDoneState(v["Looter"], v["Traded"], v["itemName"])
@@ -4173,12 +4183,7 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
     status.BossLootTable:SetData(BossLootTableData, true, skipsort);
 	return BossLootTableData
 end
-function getPlayerClass(PlayerName)
-  
-	local className, classFilename, classId = UnitClass(PlayerName)
-	return className
-  
-end
+
 function isLooterInSpecialFilter(looter, specialFilter)
     --return if looter is not in special filter
     --GDKPd_Debug("isLooterInSpecialFilter:Called!");
@@ -4251,7 +4256,7 @@ function check4GroupFilters(classFilter)
     return oclassFilter
 end
 function calculateLootTimeLeft (timeLooted)
-
+	local lootTime
     lootTimeStamp = timeLooted;
     local nowTimeStamp = time();
     -- GDKPd_Debug(date("%m/%d/%y %H:%M:%S", nowTimeStamp));
@@ -4278,6 +4283,7 @@ function calculateLootTimeLeft (timeLooted)
     else
         lootTime = date("%I:%M", timeLooted); --default to time stamp if the loot has expired
     end
+	return lootTime
 end
 ------------------------
 --  helper functions  --
