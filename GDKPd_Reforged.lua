@@ -827,17 +827,17 @@ status.removePlayerValueButton:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_REMFROMPOT")
 end)
 
---ATTENDEES TABLE
-local GDKPd_RaidAttendeesTableColDef = {
+--Player Balance TABLE
+local GDKPd_PlayerBalanceTableColDef = {
     {["name"] = "", ["width"] = 1},                            -- invisible column for storing the player number index from the raidlog-table
     {["name"] = "Name", ["width"] = 100},
     {["name"] = "$$$", ["width"] = 40},
 };
 
-MRT_GUI_AttendeesTable = ScrollingTable:CreateST(GDKPd_RaidAttendeesTableColDef,18, 11, nil, status);           
-MRT_GUI_AttendeesTable.head:SetHeight(15);                                                                    
-MRT_GUI_AttendeesTable.frame:SetPoint("TOPLEFT", status.distribute, "BOTTOMLEFT", 0 , -20);
-MRT_GUI_AttendeesTable:EnableSelection(true);
+status.PlayerBalanceTable = ScrollingTable:CreateST(GDKPd_PlayerBalanceTableColDef,18, 10, nil, status);           
+status.PlayerBalanceTable.head:SetHeight(15);                                                                    
+status.PlayerBalanceTable.frame:SetPoint("TOPLEFT", status.rules, "BOTTOMLEFT", 0 , -20);
+status.PlayerBalanceTable:EnableSelection(true);
 
 --SHOW AUCTION HISTORY
 --[[status.itemhistory = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -3463,6 +3463,9 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			else
 				--LibStub("AceConfigDialog-3.0"):Open("GDKPd")
 				self:PotLogTableUpdate();
+				status.PotLogTable:SetSelection(1)
+				GDKPd:PotChanged()
+				GDKPd:PlayerBalanceTableUpdate()
 				self.status:Show();
 				status:Update();
 
@@ -4112,6 +4115,30 @@ function GDKPd:IsActivePotSelected()
 
 end
 
+------------------------
+-- PlayerBalance Table--
+------------------------
+
+function GDKPd:PlayerBalanceTableUpdate()
+	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: method fired!")
+	local PlayerBalanceTableData = {};
+	local intCount = 0
+	local classColor = "ff9d9d9d"
+	local curBalance = GDKPd_PotData.playerBalance 
+	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: #playerBalance: " ..#curBalance)
+	for i, v in pairs(curBalance) do
+		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: inside for" )
+		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: i: " ..i)
+		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: v: " ..v)
+		classColor = GDKPd:getClassColorFromName(v)
+		intCount = intCount + 1
+		PlayerBalanceTableData[intCount] = {i, "|c"..classColor..v};
+	end
+	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: outside for" )
+	table.sort(PlayerBalanceTableData, function(a, b) return (a[1] > b[1]); end);
+	status.PlayerBalanceTable:SetData(PlayerBalanceTableData, true);
+end
+
 ---------------------
 -- Boss Loot Table --
 ---------------------
@@ -4158,15 +4185,16 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
 			-- SF: if unassigned, make it red.
 			
 			--Set Class Color
-			GDKPd_Debug("BossLootTableUpdate: v['name']: "..v["name"])
+			--[[ GDKPd_Debug("BossLootTableUpdate: v['name']: "..v["name"])
 			local playerClass, classFilename, classId = UnitClass(v["name"])
 			if (playerClass) then 
 				GDKPd_Debug("BossLootTableUpdate: playerClass: "..playerClass)
 			else
 				GDKPd_Debug("BossLootTableUpdate: playerClass: isNull")
 			end
-			classColor = GDKPd:getClassColor(playerClass);  
-			GDKPd_Debug("BossLootTableUpdate: classColor: "..classColor)
+			classColor = GDKPd:getClassColor(playerClass);   ]]
+			classColor = GDKPd:getClassColorFromName(v["name"])
+			--GDKPd_Debug("BossLootTableUpdate: classColor: "..classColor)
 			--GDKPd_Debug("Row: "..v["itemName"])
 			--GDKPd_Debug("BossLootTableUpdate: elseif raidnum condition: looter: " ..v["Looter"] .."playerClass: "..playerClass..", classColor: " ..classColor);
 			
@@ -4258,6 +4286,20 @@ function GDKPd:isLooterInSpecialFilter(looter, specialFilter)
     end
     return true;
 end
+
+function GDKPd:getClassColorFromName(name)
+	--Set Class Color
+	--GDKPd_Debug("GDKPd:getClassColorFromName: name: "..name)
+	local playerClass, classFilename, classId = UnitClass(name)
+	if (playerClass) then 
+		--GDKPd_Debug("GDKPd:getClassColorFromName:  playerClass: "..playerClass)
+	else
+		--GDKPd_Debug("GDKPd:getClassColorFromName: playerClass: isNull")
+	end
+	local classColor = GDKPd:getClassColor(playerClass);  
+	--GDKPd_Debug("GDKPd:getClassColorFromName: classColor: "..classColor)
+	return classColor
+end 
 
 function GDKPd:getClassColor(class)
     local classColor = "ff9d9d9d";
