@@ -692,7 +692,7 @@ status.PotLogTable:EnableSelection(true);
 status.PotLogTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
 	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
-    	GDKPd:BossLootTableUpdate();
+    	GDKPd:PotChanged();
 		return true
 	end,
 })
@@ -4056,6 +4056,14 @@ function stringtodate(timeString)
 	
 	--return formatedString..'\nUnix timestamp is '..timeStamp
 	return timeStamp
+end
+
+
+---------------------
+-- POT CHANGED --
+---------------------
+function GDKPd:PotChanged()
+	GDKPd:BossLootTableUpdate();
 end
 
 ---------------------
