@@ -715,40 +715,12 @@ l:SetColorTexture(235,231,223,.5)
 l:SetStartPoint("TOPLEFT",20,-140)
 l:SetEndPoint("TOPLEFT",185,-140)
 
--- POT FROM ITEMS
-status.potItemsLabel = status:CreateFontString()
-status.potItemsLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-status.potItemsLabel:SetTextColor(1,1,1)
-status.potItemsLabel:SetPoint("TOPLEFT", status.PotLogTable.frame, "TOPLEFT", 05, -88)
-status.potItemsLabel:SetJustifyH("LEFT")
-status.potItemsLabel:SetText("Item Spend:")
-
-status.potItemsAmount = status:CreateFontString()
-status.potItemsAmount:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-status.potItemsAmount:SetTextColor(1,1,1)
-status.potItemsAmount:SetPoint("LEFT", status.potItemsLabel, "RIGHT", 15, 0)
-status.potItemsAmount:SetJustifyH("LEFT")
-status.potItemsAmount:SetText("10000g")
-
--- POT ADJUST
-status.potAdjustLabel = status:CreateFontString()
-status.potAdjustLabel:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-status.potAdjustLabel:SetTextColor(1,1,1)
-status.potAdjustLabel:SetPoint("TOPLEFT", status.potItemsLabel, "BOTTOMLEFT", 0, -10)
-status.potAdjustLabel:SetJustifyH("LEFT")
-status.potAdjustLabel:SetText("Pot Adjust:")
-
-status.potAdjustBox = CreateFrame("EditBox", nil, status, "InputBoxTemplate")
-status.potAdjustBox:SetSize(75, 30)
-status.potAdjustBox:SetAutoFocus(false) -- dont automatically focus
-status.potAdjustBox:SetFontObject("ChatFontNormal")
-status.potAdjustBox:SetPoint("LEFT", status.potAdjustLabel, "RIGHT", 10, 0);
 
 -- POT TOTAL
 status.potText = status:CreateFontString()
-status.potText:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.potText:SetFont("Fonts\\FRIZQT__.TTF", 18, "")
 status.potText:SetTextColor(1,1,1)
-status.potText:SetPoint("TOPLEFT", status.potAdjustLabel, "BOTTOMLEFT", 0, -10)
+status.potText:SetPoint("TOPLEFT", status.PotLogTable.frame, "TOPLEFT", 05, -88)
 status.potText:SetJustifyH("LEFT")
 
 status.potDistributeText = status:CreateFontString()
@@ -757,35 +729,41 @@ status.potDistributeText:SetTextColor(1,1,1)
 status.potDistributeText:SetPoint("TOPLEFT", status.potText, "BOTTOMLEFT", 0, -10)
 status.potDistributeText:SetJustifyH("LEFT")
 
+-- ADD/ REMOVE GOLD
+status.addPotValueButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.addPotValueButton:SetSize(22,22)
+status.addPotValueButton:SetPoint("TOPLEFT", status.PotLogTable.frame, "BOTTOMLEFT", 128, -15)
+status.addPotValueLabel = status.addLoot:CreateFontString()
+status.addPotValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
+status.addPotValueLabel:SetText("+")
+status.addPotValueButton:SetFontString(status.addPotValueLabel)
+status.addPotValueButton:SetScript("OnClick", function(self)
+	StaticPopup_Show("GDKPD_ADDTOPOT")
+end)
+
+status.removePotValueButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.removePotValueButton:SetSize(22,22)
+status.removePotValueButton:SetPoint("LEFT", status.addPotValueButton, "RIGHT")
+status.removePotValueLabel = status.addLoot:CreateFontString()
+status.removePotValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
+status.removePotValueLabel:SetText("-")
+status.removePotValueButton:SetFontString(status.removePotValueLabel)
+status.removePotValueButton:SetScript("OnClick", function(self)
+	StaticPopup_Show("GDKPD_REMFROMPOT")
+end)
+
 -- LINE ABOVE ATTENDEE LIST
 local l = status:CreateLine()
 print(l)
 l:SetThickness(1)
 l:SetColorTexture(235,231,223,.5)
-l:SetStartPoint("TOPLEFT",20,-240)
-l:SetEndPoint("TOPLEFT",185,-240)
-
--- ADD/ REMOVE GOLD
-status.add = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.add:SetSize(15,15)
-status.add:SetPoint("LEFT", status, "TOPLEFT",130,-200)
-status.add:SetText("+")
-status.add:SetScript("OnClick", function(self)
-	StaticPopup_Show("GDKPD_ADDTOPOT")
-end)
-status.rem = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.rem:SetSize(15,15)
-status.rem:SetPoint("LEFT", status.add, "RIGHT")
-status.rem:SetText("-")
-status.rem:SetScript("OnClick", function(self)
-	StaticPopup_Show("GDKPD_REMFROMPOT")
-end)
-
+l:SetStartPoint("TOPLEFT",20,-200)
+l:SetEndPoint("TOPLEFT",185,-200)
 
 --POST RULES
 status.rules = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.rules:SetSize(90, 22)
-status.rules:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 245)
+status.rules:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 268)
 status.rules:SetText("Post rules")
 status.rules:SetScript("OnClick",function()
 	local announceStrings = emptytable("")
@@ -831,7 +809,7 @@ local GDKPd_RaidAttendeesTableColDef = {
     {["name"] = "$$$", ["width"] = 40},
 };
 
-MRT_GUI_AttendeesTable = ScrollingTable:CreateST(GDKPd_RaidAttendeesTableColDef,18, 10, nil, status);           
+MRT_GUI_AttendeesTable = ScrollingTable:CreateST(GDKPd_RaidAttendeesTableColDef,18, 11, nil, status);           
 MRT_GUI_AttendeesTable.head:SetHeight(15);                                                                    
 MRT_GUI_AttendeesTable.frame:SetPoint("TOPLEFT", status.rules, "BOTTOMLEFT", 0 , -20);
 MRT_GUI_AttendeesTable:EnableSelection(true);
@@ -3461,7 +3439,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 				--LibStub("AceConfigDialog-3.0"):Open("GDKPd")
 				self:PotLogTableUpdate();
 				self.status:Show();
-				GDKPd:BossLootTableUpdate();
+				status:Update();
 
 				
 			end
@@ -4085,10 +4063,10 @@ function status:Update()
 		lastDist = 44
 	end
 	if lastDist > 0 then
-		status.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
-		status.potDistributeText:SetText(L[" |cffaa0000(Distribute: %dg)|r"]:format(potAmount-lastDist))
+		status.potText:SetText(("Pot: %d|cffffd100g|r"):format(potAmount))
+		status.potDistributeText:SetText((" |cffaa0000(Distribute: %dg)|r"):format(potAmount-lastDist))
 	else
-		status.potText:SetText(L["Pot size: %d|cffffd100g|r"]:format(potAmount))
+		status.potText:SetText(("Pot: %d|cffffd100g|r"):format(potAmount))
 		status.potDistributeText:SetText("")
 	end
 end
