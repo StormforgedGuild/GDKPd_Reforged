@@ -16,7 +16,7 @@ for s in REALM_SEPARATORS:gmatch(".") do tinsert(REALM_SEPARATOR_LIST,s) end
 local deformat = LibStub("LibDeformat-3.0");
 
 --MRT IMPORTS
-local ScrollingTable = LibStub("ScrollingTable");
+local ScrollingTable = LibStub("ScrollingTable2");
 
 -- table handling to prevent any memory leakage from accumulating.
 local emptytable = select(2,...).emptytable
