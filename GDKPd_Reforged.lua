@@ -616,6 +616,14 @@ status.BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil,
 status.BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
 status.BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -80);
 status.BossLootTable:EnableSelection(true);
+status.BossLootTable:RegisterEvents({
+	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
+	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
+    	status:Update();
+		return true
+	end,
+})
+
 function status.BossLootTable:getInfofromSelection()
 	local loot_select = status.BossLootTable:GetSelection();
     if (loot_select == nil) then
@@ -1218,6 +1226,13 @@ status.PlayerBalanceTable = ScrollingTable:CreateST(GDKPd_PlayerBalanceTableColD
 status.PlayerBalanceTable.head:SetHeight(15);                                                                    
 status.PlayerBalanceTable.frame:SetPoint("TOPLEFT", status.distribute, "BOTTOMLEFT", 0 , -20);
 status.PlayerBalanceTable:EnableSelection(true);
+status.PlayerBalanceTable:RegisterEvents({
+	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
+	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
+    	status:Update();
+		return true
+	end,
+})
 
 --SHOW AUCTION HISTORY
 --[[status.itemhistory = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -4522,7 +4537,7 @@ function status:Update()
 		status.potDistributeText:SetText("")
 	end
 
-	--Enable/Disable Buttons
+	--Enable/Disable Buttons depending on whether active raid is selected or not
 	if GDKPd:IsActivePotSelected() then
 		GDKPd.status.removeLoot:Show();
 		GDKPd.status.addLoot:Show();
@@ -4531,6 +4546,10 @@ function status:Update()
 		GDKPd.status.bidLoot:Show();
 		GDKPd.status.tradeLoot:Show();
 		GDKPd.status.addLootToActivePot:Hide();
+		GDKPd.status.addPotValueButton:Enable();
+		GDKPd.status.removePotValueButton:Enable();
+		GDKPd.status.distribute:Enable();
+		GDKPd.status.removePot:Disable();
 	else
 		GDKPd.status.addLoot:Hide();
 		GDKPd.status.removeLoot:Hide();
@@ -4539,7 +4558,41 @@ function status:Update()
 		GDKPd.status.bidLoot:Hide();
 		GDKPd.status.tradeLoot:Hide();
 		GDKPd.status.addLootToActivePot:Show();
+		GDKPd.status.addPotValueButton:Disable();
+		GDKPd.status.removePotValueButton:Disable();
+		GDKPd.status.distribute:Disable();
+		GDKPd.status.removePot:Enable();
+	end
+	
+	--Enable/Disable Buttons depending on whether loot item is selected or not
+	if status.BossLootTable:GetSelection() then
+		GDKPd.status.removeLoot:Enable();
+		GDKPd.status.addLoot:Enable();
+		GDKPd.status.editLoot:Enable();
+		GDKPd.status.linkLoot:Enable();
+		GDKPd.status.bidLoot:Enable();
+		GDKPd.status.tradeLoot:Enable();
+	else
+		GDKPd.status.addLoot:Disable();
+		GDKPd.status.removeLoot:Disable();
+		GDKPd.status.editLoot:Disable();
+		GDKPd.status.linkLoot:Disable();
+		GDKPd.status.bidLoot:Disable();
+		GDKPd.status.tradeLoot:Disable();
+	end
 
+	--Enable/Disable Buttons depending on whether player  is selected or not
+	if GDKPd:IsActivePotSelected() then
+		if status.PlayerBalanceTable:GetSelection() then
+			GDKPd.status.addPlayerValueButton:Enable();
+			GDKPd.status.removePlayerValueButton:Enable();
+		else
+			GDKPd.status.addPlayerValueButton:Disable();
+			GDKPd.status.removePlayerValueButton:Disable();
+		end
+	else
+		GDKPd.status.addPlayerValueButton:Disable();
+		GDKPd.status.removePlayerValueButton:Disable();
 	end
 end
 
