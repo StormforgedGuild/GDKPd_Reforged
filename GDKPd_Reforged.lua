@@ -232,7 +232,6 @@ StaticPopupDialogs["GDKPD_REMFROMPLAYER"] = {
 		SendAddonMessage("GDKPD MANADJ",tostring(tonumber(self.editBox:GetText()) or 0),"WHISPER",data)
 		GDKPd.balance:Update()
 		if GDKPd.opt.linkBalancePot then
-
 			GDKPd_PotData.potAmount = GDKPd_PotData.potAmount+(tonumber(self.editBox:GetText()) or 0)
 			--tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
 			local bid1 = (tonumber(self.editBox:GetText()) or 0)*(-1)
@@ -277,6 +276,7 @@ StaticPopupDialogs["GDKPD_WIPEHISTORY"]={
 	showAlert=true,
 	cancels="GDKPD_WIPEHISTORY",
 }
+
 StaticPopupDialogs["GDKPD_AUTOBID"] = {
 	text=L["Enter the maximum amount of money you want to bid on %s:"],
 	button1=BID,
@@ -616,6 +616,18 @@ status.BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil,
 status.BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
 status.BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -80);
 status.BossLootTable:EnableSelection(true);
+function status.BossLootTable:getInfofromSelection()
+	local loot_select = status.BossLootTable:GetSelection();
+    if (loot_select == nil) then
+        GDKPd_Debug("No loot selected");
+        return;
+    end
+    local lootnum = status.BossLootTable:GetCell(loot_select, 1);
+	local link = GDKPd_PotData.curPotHistory[lootnum]["item"]
+	local playerName = status.BossLootTable:GetCell(loot_select, 4);
+	local bid = status.BossLootTable:GetCell(loot_select, 5);
+	return link, lootnum, cleanString(playerName, true), bid
+end
 
 --BOSS LOOT FILTER
 status.lootFilter = CreateFrame("EditBox", nil, status, "InputBoxTemplate")
@@ -650,6 +662,36 @@ status.removeLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
 status.removeLootFont:SetText("-")
 status.removeLoot:SetFontString(status.removeLootFont)
 status.removeLoot:SetPoint("LEFT", status.addLoot, "RIGHT", 3, 0 );
+status.removeLoot:SetScript("OnClick", function() GDKPd:removeLoot_click(); end);
+
+StaticPopupDialogs["GDKPd_REMOVEITEMFROMPOT"]={
+	text="This will remove the selected item from the pot, are you sure?",
+	button1="Remove",
+	button2=CANCEL,
+	OnAccept=function() status.removeLoot:removeSelectedLoot(); end,
+	timeout=0,
+	hideOnEscape=true,
+	whileDead=true,
+	showAlert=true,
+	cancels="GDKPd_REMOVEITEMFROMPOT",
+}
+
+function GDKPd:removeLoot_click()
+	local link, lootnum = status.BossLootTable:getInfofromSelection()
+	if link ~= nil then 
+		StaticPopup_Show("GDKPd_REMOVEITEMFROMPOT")
+	end 
+end
+
+function status.removeLoot:removeSelectedLoot()
+	local link, lootnum, playerName, bid = status.BossLootTable:getInfofromSelection()
+	GDKPd_PotData.playerBalance[playerName] = (GDKPd_PotData.playerBalance[playerName]+(tonumber(bid) or 0))
+	SendAddonMessage("GDKPD MANADJ",tostring(tonumber(bid) or 0),"WHISPER",playerName)
+	GDKPd.balance:Update()
+	tremove(GDKPd_PotData.curPotHistory, lootnum)
+	status:Update()
+end
+
 
 --EDIT LOOT BUTTON
 status.editLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -684,13 +726,14 @@ status.bidLoot:SetScript("OnClick", function() GDKPd:bidLoot_click(); end);
 ---------------------
 function GDKPd:bidLoot_click()
 	
-    local loot_select = status.BossLootTable:GetSelection();
+    --[[ local loot_select = status.BossLootTable:GetSelection();
     if (loot_select == nil) then
         GDKPd_Debug("No loot selected");
         return;
     end
     local lootnum = status.BossLootTable:GetCell(loot_select, 1);
-	local link = GDKPd_PotData.curPotHistory[lootnum]["item"]
+	local link = GDKPd_PotData.curPotHistory[lootnum]["item"] ]]
+	local link, lootnum = status.BossLootTable:getInfofromSelection()
 	GDKPd:DoAuction(link, lootnum)
     --LootAnnounce("RAID_WARNING", MRT_RaidLog[raidnum]["Loot"][lootnum]["ItemLink"], MRT_GUI_BossLootTable:GetCell(loot_select, 5))
 end
@@ -954,12 +997,14 @@ end
 --use this function to get player to trade with
 
 function GDKPd:GetLootPlayer()
-    local loot_select = status.BossLootTable:GetSelection();
+    --[[ local loot_select = status.BossLootTable:GetSelection();
     if (loot_select == nil) then
         GDKPd_Debug("No loot selected");
         return -1;
     end
-    local playerName = status.BossLootTable:GetCell(loot_select, 4);
+    local playerName = status.BossLootTable:GetCell(loot_select, 4); ]]
+
+	local _, _, playerName = status.BossLootTable:getInfofromSelection()
     GDKPd_Debug("GetLootPlayer: playerName: " ..playerName)
     return playerName
 end
