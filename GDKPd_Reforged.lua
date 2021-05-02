@@ -705,6 +705,12 @@ function GDKPd:tradeLoot_click()
     end
 end
 
+function GDKPd:doFollowTrade(playerName)
+    GDKPd_Debug("doFollowTrade: playerName: "..playerName)
+    FollowUnit(playerName);
+    InitiateTrade(playerName);
+end
+
 --Populate trade window -- 
 --puts all items the person with the trade window is supposed to receive in their trade window.
 function GDKPd:TradeItems()
