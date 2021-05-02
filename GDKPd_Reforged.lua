@@ -197,8 +197,8 @@ StaticPopupDialogs["GDKPD_ADDTOPLAYER"] = {
 		if GDKPd.opt.linkBalancePot then
 			GDKPd_PotData.potAmount = math.max(0, GDKPd_PotData.potAmount-(tonumber(self.editBox:GetText()) or 0))
 			tinsert(GDKPd_PotData.curPotHistory, (tonumber(self.editBox:GetText()) or 0)*(-1))
-			GDKPd.status:Update()
 		end
+		GDKPd.status:Update()
 	end,
 	timeout=0,
 	whileDead=true,
@@ -226,8 +226,8 @@ StaticPopupDialogs["GDKPD_REMFROMPLAYER"] = {
 		if GDKPd.opt.linkBalancePot then
 			GDKPd_PotData.potAmount = GDKPd_PotData.potAmount+(tonumber(self.editBox:GetText()) or 0)
 			tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
-			GDKPd.status:Update()
 		end
+		GDKPd.status:Update()
 	end,
 	timeout=0,
 	whileDead=true,
@@ -814,7 +814,10 @@ status.addPlayerValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addPlayerValueLabel:SetText("+")
 status.addPlayerValueButton:SetFontString(status.addPlayerValueLabel)
 status.addPlayerValueButton:SetScript("OnClick", function(self)
-	StaticPopup_Show("GDKPD_ADDTOPOT")
+
+	local playerID = status.PlayerBalanceTable:GetSelection();
+	local playerName = status.PlayerBalanceTable:GetCell(playerID, 2);
+	StaticPopup_Show("GDKPD_ADDTOPLAYER", playerName).data=GDKPd:removeClassColor(playerName)
 end)
 
 status.removePlayerValueButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -825,7 +828,9 @@ status.removePlayerValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
 status.removePlayerValueLabel:SetText("-")
 status.removePlayerValueButton:SetFontString(status.removePlayerValueLabel)
 status.removePlayerValueButton:SetScript("OnClick", function(self)
-	StaticPopup_Show("GDKPD_REMFROMPOT")
+	local playerID = status.PlayerBalanceTable:GetSelection();
+	local playerName = status.PlayerBalanceTable:GetCell(playerID, 2);
+	StaticPopup_Show("GDKPD_REMFROMPLAYER", playerName).data=GDKPd:removeClassColor(playerName)
 end)
 
 --Player Balance TABLE
@@ -1704,6 +1709,10 @@ function version:Update()
 	end
 	self:SetHeight(size)
 end
+
+------------------------------------------
+-- Balance frame
+-------------------------------------------
 function GDKPd:MailBalanceGold(targetName)
 	local moneyToMail = GDKPd_PotData.playerBalance[targetName]
 	if moneyToMail <= 0 then return end
@@ -4069,7 +4078,6 @@ function GDKPd:stringtodate(timeString)
 	return timeStamp
 end
 
-
 ---------------------
 -- UPDATE THE DISPLAYED GOLD --
 ---------------------
@@ -4318,6 +4326,10 @@ function GDKPd:getClassColorFromName(name)
 	--GDKPd_Debug("GDKPd:getClassColorFromName: classColor: "..classColor)
 	return classColor
 end 
+
+function GDKPd:removeClassColor(name)
+	return strsub(name, 11)
+end
 
 function GDKPd:getClassColor(class)
     local classColor = "ff9d9d9d";
