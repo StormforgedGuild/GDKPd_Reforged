@@ -463,7 +463,7 @@ anchor.movetx.text:SetAllPoints()
 -------------------------------------------------------------------------------------------
 GDKPd.status = CreateFrame("Frame", "GDKPd_Status", UIParent)
 local status = GDKPd.status
-status:SetSize(605, 550)
+status:SetSize(604, 550)
 status:Hide()
 status:SetBackdrop({
 	bgFile="Interface\\DialogFrame\\UI-DialogBox-Gold-Background",
@@ -514,8 +514,22 @@ status:SetScript("OnShow", function(self)
 end)
 
 --CLOSE BUTTON
-local close = CreateFrame("Button", nil, status, "UIPanelCloseButton")
-close:SetPoint("TOPRIGHT", 2, 1)
+local closeStatusButton = CreateFrame("Button", nil, status, "UIPanelCloseButton")
+closeStatusButton:SetPoint("TOPRIGHT", 0, 0)
+
+--OPTIONS
+status.text = status:CreateFontString()
+status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.text:SetTextColor(1,1,1)
+status.text:SetPoint("TOPLEFT", 15, -15)
+status.text:SetJustifyH("LEFT")
+status.options = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.options:SetSize(68, 22)
+status.options:SetPoint("RIGHT", closeStatusButton, "LEFT", 6, 0)
+status.options:SetText("Options")
+status.options:SetScript("OnClick", function(self)
+	LibStub("AceConfigDialog-3.0"):Open("GDKPd")
+end)
 
 --BOSS LOOT TABLE
 local BossLootTableColDef = {
@@ -573,7 +587,7 @@ status.itemtt:UnregisterAllEvents()
 --Boss Loot Table
 status.BossLootTable = ScrollingTable:CreateST(BossLootTableColDef, 12, 32, nil, status);           -- ItemId should be squared - so use 30x30 -> 30 pixels high
 status.BossLootTable.head:SetHeight(15);                                                                     -- Manually correct the height of the header (standard is rowHight - 30 pix would be different from others tables around and looks ugly)
-status.BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -75);
+status.BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -80);
 status.BossLootTable:EnableSelection(true);
 
 --BOSS LOOT FILTER
@@ -581,7 +595,7 @@ status.lootFilter = CreateFrame("EditBox", nil, status, "InputBoxTemplate")
 status.lootFilter:SetSize(100, 30)
 status.lootFilter:SetAutoFocus(false) -- dont automatically focus
 status.lootFilter:SetFontObject("ChatFontNormal")
-status.lootFilter:SetPoint("TOPLEFT", status, "TOPLEFT", 210, -25);
+status.lootFilter:SetPoint("TOP", status.BossLootTable.frame, "TOPLEFT", 60, 52);
 
 --ADD LOOT BUTTON
 status.addLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -590,7 +604,7 @@ status.addLootFont = status.addLoot:CreateFontString()
 status.addLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addLootFont:SetText("+")
 status.addLoot:SetFontString(status.addLootFont)
-status.addLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 315, -28);
+status.addLoot:SetPoint("LEFT", status.lootFilter, "RIGHT", 3, 0 );
 
 --REMOVE LOOT BUTTON
 status.removeLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -599,7 +613,7 @@ status.removeLootFont = status.removeLoot:CreateFontString()
 status.removeLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
 status.removeLootFont:SetText("-")
 status.removeLoot:SetFontString(status.removeLootFont)
-status.removeLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 337, -28);
+status.removeLoot:SetPoint("LEFT", status.addLoot, "RIGHT", 3, 0 );
 
 --EDIT LOOT BUTTON
 status.editLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -608,7 +622,7 @@ status.editLootFont = status.editLoot:CreateFontString()
 status.editLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.editLootFont:SetText("Edit")
 status.editLoot:SetFontString(status.editLootFont)
-status.editLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 360, -28);
+status.editLoot:SetPoint("LEFT", status.removeLoot, "RIGHT", 3, 0 );
 
 --LINK LOOT BUTTON
 status.linkLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -617,7 +631,7 @@ status.linkLootFont = status.linkLoot:CreateFontString()
 status.linkLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.linkLootFont:SetText("Link")
 status.linkLoot:SetFontString(status.linkLootFont)
-status.linkLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 411, -28);
+status.linkLoot:SetPoint("LEFT", status.editLoot, "RIGHT", 3, 0 );
 
 --BID LOOT BUTTON
 status.bidLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -626,7 +640,7 @@ status.bidLootFont = status.bidLoot:CreateFontString()
 status.bidLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.bidLootFont:SetText("Bid")
 status.bidLoot:SetFontString(status.bidLootFont)
-status.bidLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 462, -28);
+status.bidLoot:SetPoint("LEFT", status.linkLoot, "RIGHT", 3, 0 );
 status.bidLoot:SetScript("OnClick", function() GDKPd:bidLoot_click(); end);
 
 function GDKPd:bidLoot_click()
@@ -649,15 +663,15 @@ status.tradeLootFont = status.tradeLoot:CreateFontString()
 status.tradeLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.tradeLootFont:SetText("Trade")
 status.tradeLoot:SetFontString(status.tradeLootFont)
-status.tradeLoot:SetPoint("TOPLEFT", status, "TOPLEFT", 512, -28);
+status.tradeLoot:SetPoint("LEFT", status.bidLoot, "RIGHT", 3, 0 );
 
 --LOOT LINE
 status.lootLine = status:CreateLine()
 print(l)
 status.lootLine :SetThickness(1)
 status.lootLine :SetColorTexture(235,231,223,.5)
-status.lootLine :SetStartPoint("TOPLEFT",205,-55)
-status.lootLine :SetEndPoint("TOPLEFT",585,-55)
+status.lootLine :SetStartPoint("TOPLEFT",205,-60)
+status.lootLine :SetEndPoint("TOPLEFT",585,-60)
 
 --NEW POT
 status.reset = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -677,19 +691,33 @@ status.removePot:SetScript("OnClick", function(self)
 --	StaticPopup_Show("GDKPD_RESETPOT")
 end)
 
---OPTIONS
-status.text = status:CreateFontString()
-status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
-status.text:SetTextColor(1,1,1)
-status.text:SetPoint("TOPLEFT", 15, -15)
-status.text:SetJustifyH("LEFT")
-status.options = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.options:SetSize(75, 22)
-status.options:SetPoint("LEFT", status.removePot, "RIGHT")
-status.options:SetText("Options")
-status.options:SetScript("OnClick", function(self)
-	LibStub("AceConfigDialog-3.0"):Open("GDKPd")
+--POST RULES
+status.rules = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.rules:SetSize(75, 22)
+status.rules:SetPoint("LEFT", status.removePot, "RIGHT", 0, 0)
+status.rules:SetText("Post rules")
+status.rules:SetScript("OnClick",function()
+	local announceStrings = emptytable("")
+	for line in string.gmatch(GDKPd.opt.rulesString,"[^\n]+") do
+		for word in string.gmatch(line, "%S+") do
+			if strlen(announceStrings[#announceStrings])+1+strlen(word) > 255 then
+				tinsert(announceStrings, word)
+			else
+				if strlen(announceStrings[#announceStrings]) > 0 then
+					announceStrings[#announceStrings] = announceStrings[#announceStrings].." "..word
+				else
+					announceStrings[#announceStrings] = word
+				end
+			end
+		end
+		tinsert(announceStrings, "")
+	end
+	for _, msg in ipairs(announceStrings) do
+		SendChatMessage(msg, "RAID")
+	end
+	announceStrings:Release()
 end)
+status.rules:Disable()
 
 --RAID LOG TABLE
 local PotLogTableColDef = {
@@ -717,7 +745,6 @@ l:SetThickness(1)
 l:SetColorTexture(235,231,223,.5)
 l:SetStartPoint("TOPLEFT",20,-140)
 l:SetEndPoint("TOPLEFT",185,-140)
-
 
 -- POT TOTAL
 status.potText = status:CreateFontString()
@@ -763,34 +790,6 @@ l:SetColorTexture(235,231,223,.5)
 l:SetStartPoint("TOPLEFT",20,-200)
 l:SetEndPoint("TOPLEFT",185,-200)
 
---POST RULES
-status.rules = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.rules:SetSize(90, 22)
-status.rules:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 0)
-status.rules:SetText("Post rules")
-status.rules:SetScript("OnClick",function()
-	local announceStrings = emptytable("")
-	for line in string.gmatch(GDKPd.opt.rulesString,"[^\n]+") do
-		for word in string.gmatch(line, "%S+") do
-			if strlen(announceStrings[#announceStrings])+1+strlen(word) > 255 then
-				tinsert(announceStrings, word)
-			else
-				if strlen(announceStrings[#announceStrings]) > 0 then
-					announceStrings[#announceStrings] = announceStrings[#announceStrings].." "..word
-				else
-					announceStrings[#announceStrings] = word
-				end
-			end
-		end
-		tinsert(announceStrings, "")
-	end
-	for _, msg in ipairs(announceStrings) do
-		SendChatMessage(msg, "RAID")
-	end
-	announceStrings:Release()
-end)
-status.rules:Disable()
-
 --DISTRIBUTE 
 status.text = status:CreateFontString()
 status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
@@ -798,7 +797,7 @@ status.text:SetTextColor(1,1,1)
 status.text:SetJustifyH("LEFT")
 status.distribute = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.distribute:SetSize(80, 22)
-status.distribute:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 268)
+status.distribute:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 280)
 status.distribute:SetText("Distribute")
 status.distribute:SetScript("OnClick", function(self)
 	GDKPd:DistributePot()
@@ -836,11 +835,11 @@ end)
 --Player Balance TABLE
 local GDKPd_PlayerBalanceTableColDef = {
     {["name"] = "", ["width"] = 1},                            -- invisible column for storing the player number index from the raidlog-table
-    {["name"] = "Name", ["width"] = 100},
-    {["name"] = "$$$", ["width"] = 40},
+    {["name"] = "Name", ["width"] = 110},
+    {["name"] = "$$$", ["width"] = 30},
 };
 
-status.PlayerBalanceTable = ScrollingTable:CreateST(GDKPd_PlayerBalanceTableColDef,18, 11, nil, status);           
+status.PlayerBalanceTable = ScrollingTable:CreateST(GDKPd_PlayerBalanceTableColDef,18, 12, nil, status);           
 status.PlayerBalanceTable.head:SetHeight(15);                                                                    
 status.PlayerBalanceTable.frame:SetPoint("TOPLEFT", status.distribute, "BOTTOMLEFT", 0 , -20);
 status.PlayerBalanceTable:EnableSelection(true);
@@ -920,7 +919,7 @@ status.noannounce:SetScript("OnClick", function(self)
 end)
 status.noannounce:Hide()
 function status:UpdateSize()
-	local height = 480
+	local height = 485
 	height = height+status.text:GetHeight()
 	if status.announcetext:IsShown() then
 		height=height+status.announcetext:GetHeight()+5
@@ -1897,6 +1896,7 @@ function balance:Update()
 		end
 		self:SetWidth(200)
 	end
+	self:Hide()
 end
 GDKPd.playerBalance = CreateFrame("Frame", "GDKPd_PlayerBalance", UIParent)
 local playerBalance = GDKPd.playerBalance
@@ -4111,7 +4111,7 @@ function status:Update()
 	end
 	if lastDist > 0 then
 		status.potText:SetText(("Pot: %d|cffffd100g|r"):format(potAmount))
-		status.potDistributeText:SetText((" |cffaa0000(Distribute: %dg)|r"):format(potAmount-lastDist))
+		status.potDistributeText:SetText((" |cffaaff00Undistributed: %dg|r"):format(potAmount-lastDist))
 	else
 		status.potText:SetText(("Pot: %d|cffffd100g|r"):format(potAmount))
 		status.potDistributeText:SetText("")
