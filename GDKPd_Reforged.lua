@@ -136,7 +136,7 @@ StaticPopupDialogs["GDKPD_ADDTOPOT"] = {
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
-		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="Raid", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
@@ -168,7 +168,7 @@ StaticPopupDialogs["GDKPD_REMFROMPOT"] = {
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
-		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="", index=GDKPd.itemCount, ltime=time()})
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="Raid", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
@@ -195,8 +195,16 @@ StaticPopupDialogs["GDKPD_ADDTOPLAYER"] = {
 		SendAddonMessage("GDKPD MANADJ",tostring((tonumber(self.editBox:GetText()) or 0)*(-1)),"WHISPER",data)
 		GDKPd.balance:Update()
 		if GDKPd.opt.linkBalancePot then
+
 			GDKPd_PotData.potAmount = math.max(0, GDKPd_PotData.potAmount-(tonumber(self.editBox:GetText()) or 0))
-			tinsert(GDKPd_PotData.curPotHistory, (tonumber(self.editBox:GetText()) or 0)*(-1))
+			local bid1 = tonumber(self.editBox:GetText()) or 0
+			if bid1 < 0 then
+				bid1 = bid1*(-1);
+			end
+			local name = ""
+			GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
+			GDKPd.itemCount = GDKPd.itemCount + 1
+			tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name=data, index=GDKPd.itemCount, ltime=time()})
 		end
 		GDKPd.status:Update()
 	end,
@@ -224,8 +232,17 @@ StaticPopupDialogs["GDKPD_REMFROMPLAYER"] = {
 		SendAddonMessage("GDKPD MANADJ",tostring(tonumber(self.editBox:GetText()) or 0),"WHISPER",data)
 		GDKPd.balance:Update()
 		if GDKPd.opt.linkBalancePot then
+
 			GDKPd_PotData.potAmount = GDKPd_PotData.potAmount+(tonumber(self.editBox:GetText()) or 0)
-			tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
+			--tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
+			local bid1 = (tonumber(self.editBox:GetText()) or 0)*(-1)
+			if bid1 >0 then
+				bid1 = bid1*(-1);
+			end
+			local name = ""
+			GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
+			GDKPd.itemCount = GDKPd.itemCount + 1
+			tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name=data, index=GDKPd.itemCount, ltime=time()})
 		end
 		GDKPd.status:Update()
 	end,
