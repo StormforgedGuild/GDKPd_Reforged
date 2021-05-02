@@ -793,7 +793,7 @@ do
 	function ScrollingTable:CreateST(cols, numRows, rowHeight, highlight, parent)
 		local st = {};
 		self.framecount = self.framecount or 1;
-		local f = CreateFrame("Frame", "ScrollTable" .. self.framecount, parent or UIParent);
+		local f = CreateFrame("Frame", "ScrollTable2" .. self.framecount, parent or UIParent);
 		--f:SetFrameStrata("MEDIUM");
 		self.framecount = self.framecount + 1;
 		st.showing = true;
