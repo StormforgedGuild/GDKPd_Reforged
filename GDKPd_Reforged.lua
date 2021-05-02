@@ -3591,6 +3591,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 							else
 								GDKPd_BalanceData[tarName == "pot" and sender or tarName] = GDKPd_BalanceData[tarName == "pot" and sender or tarName] + targetAmount
 								GDKPd.playerBalance:Update()
+								GDKPd.status:Update()
 							end
 						end
 					else
@@ -3602,6 +3603,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 								else
 									GDKPd_BalanceData[winnerName] = GDKPd_BalanceData[winnerName]-targetAmount
 									GDKPd.playerBalance:Update()
+									GDKPd.status:Update()
 								end
 							end
 						end
@@ -3716,6 +3718,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 							else
 								GDKPd_BalanceData[tarName == "pot" and sender or tarName] = GDKPd_BalanceData[tarName == "pot" and sender or tarName] + targetAmount
 								GDKPd.playerBalance:Update()
+								GDKPd.status:Update()
 							end
 						end
 					else
@@ -3727,6 +3730,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 								else
 									GDKPd_BalanceData[winnerName] = GDKPd_BalanceData[winnerName]-targetAmount
 									GDKPd.playerBalance:Update()
+									GDKPd.status:Update()
 								end
 							end
 						end
@@ -3760,6 +3764,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			if potAmount and self:PlayerIsML(sender,false) then
 				GDKPd_BalanceData[sender] = GDKPd_BalanceData[sender]-potAmount
 				GDKPd.playerBalance:Update()
+				GDKPd.status:Update()
 			end
 		end
 	end
@@ -3784,6 +3789,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			if arg[1] == "GDKPD MANADJ" and self:PlayerIsML(sender,false) then
 				GDKPd_BalanceData[sender] = GDKPd_BalanceData[sender]+arg[2]
 				GDKPd.playerBalance:Update()
+				GDKPd.status:Update()
 			end
 		end
 	end
@@ -3866,6 +3872,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			end
 			GDKPd.balance:Update()
 			GDKPd.playerBalance:Update()
+			GDKPd.status:Update()
 		end
 	end
 	if (event == "PLAYER_REGEN_ENABLED") then
