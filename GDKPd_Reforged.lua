@@ -712,7 +712,7 @@ function GDKPd:tradeLoot_click()
 		GDKPd_Debug("GDKPd:tradeLoot_click: no active trade, find and follow")
         local PName = cleanString(GDKPd:GetLootPlayer(),true)
         if (PName ~= -1) then
-           doFollowTrade(PName)
+           GDKPd:doFollowTrade(PName)
         else
             return -1;
         end
@@ -720,6 +720,12 @@ function GDKPd:tradeLoot_click()
         GDKPd:TradeItems()
 		GDKPd:TradeItems()
     end
+end
+
+function GDKPd:doFollowTrade(playerName)
+    GDKPd_Debug("doFollowTrade: playerName: "..playerName)
+    FollowUnit(playerName);
+    InitiateTrade(playerName);
 end
 
 --Populate trade window -- 
