@@ -127,12 +127,11 @@ StaticPopupDialogs["GDKPD_ADDTOPOT"] = {
 		end
 	end,
 	OnAccept=function(self)
-		GDKPd_PotData.potAmount = (tonumber(self.editBox:GetText()) or 0)+GDKPd_PotData.potAmount
-		--tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
 		local bid1 = tonumber(self.editBox:GetText()) or 0
 		if bid1 < 0 then
 			bid1 = bid1*(-1);
 		end
+		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount + bid1
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
@@ -159,12 +158,11 @@ StaticPopupDialogs["GDKPD_REMFROMPOT"] = {
 		end
 	end,
 	OnAccept = function(self)
-		GDKPd_PotData.potAmount = math.max(0, GDKPd_PotData.potAmount-(tonumber(self.editBox:GetText()) or 0))
-		--tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
-		local bid1 = (tonumber(self.editBox:GetText()) or 0)*(-1)
-		if bid1 >0 then
+		local bid1 = tonumber(self.editBox:GetText()) 
+		if bid1 < 0 then
 			bid1 = bid1*(-1);
 		end
+		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-bid1
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
@@ -174,6 +172,33 @@ StaticPopupDialogs["GDKPD_REMFROMPOT"] = {
 	timeout=0,
 	whileDead=true,
 }
+
+StaticPopupDialogs["GDKPD_INSERTPLAYER"] = {
+	text="Enter the player name you want to add to the pot:",
+	button1=ADD,
+	button2=CANCEL,
+	hasEditBox=true,
+	OnShow=function(self)
+		self.button1:Disable()
+	end,
+	EditBoxOnEnterPressed=function(self) self:GetParent().button1:Click() end,
+	EditBoxOnTextChanged = function(self)
+		if strlen(self:GetText()) > 0 then
+			self:GetParent().button1:Enable()
+		else
+			self:GetParent().button1:Disable()
+		end
+	end,
+	OnAccept=function(self)
+
+	--	GDKPd_PotData.playerBalance[(UnitName("raid"..numRaid))] = GDKPd_PotData.playerBalance[(UnitName("raid"..numRaid))]+math.floor((distAmount or 0)/(numraid+numadditionalmemb))
+	    GDKPd_PotData.playerBalance[self.editBox:GetText()] = GDKPd_PotData.playerBalance[self.editBox:GetText()] or 0
+		GDKPd.status:Update()
+	end,
+	timeout=0,
+	whileDead=true,
+}
+
 StaticPopupDialogs["GDKPD_ADDTOPLAYER"] = {
 	text=L["Enter the amount you want to add to player %s:"],
 	button1=ADD,
@@ -191,16 +216,15 @@ StaticPopupDialogs["GDKPD_ADDTOPLAYER"] = {
 		end
 	end,
 	OnAccept = function(self, data)
-		GDKPd_PotData.playerBalance[data] = (GDKPd_PotData.playerBalance[data]+(tonumber(self.editBox:GetText()) or 0))
-		SendAddonMessage("GDKPD MANADJ",tostring((tonumber(self.editBox:GetText()) or 0)*(-1)),"WHISPER",data)
+		local bid1 = tonumber(self.editBox:GetText()) 
+		if bid1 < 0 then
+			bid1 = bid1*(-1);
+		end
+		GDKPd_PotData.playerBalance[data] = GDKPd_PotData.playerBalance[data]+bid1;
+		SendAddonMessage("GDKPD MANADJ",tostring(bid1),"WHISPER",data)
 		GDKPd.balance:Update()
 		if GDKPd.opt.linkBalancePot then
-
-			GDKPd_PotData.potAmount = math.max(0, GDKPd_PotData.potAmount-(tonumber(self.editBox:GetText()) or 0))
-			local bid1 = tonumber(self.editBox:GetText()) or 0
-			if bid1 < 0 then
-				bid1 = bid1*(-1);
-			end
+			GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-bid1;
 			local name = ""
 			GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 			GDKPd.itemCount = GDKPd.itemCount + 1
@@ -228,16 +252,15 @@ StaticPopupDialogs["GDKPD_REMFROMPLAYER"] = {
 		end
 	end,
 	OnAccept = function(self, data)
-		GDKPd_PotData.playerBalance[data] = (GDKPd_PotData.playerBalance[data]-(tonumber(self.editBox:GetText()) or 0))
-		SendAddonMessage("GDKPD MANADJ",tostring(tonumber(self.editBox:GetText()) or 0),"WHISPER",data)
+		local bid1 = (tonumber(self.editBox:GetText()) or 0)
+		if bid1 < 0 then
+			bid1 = bid1*(-1);
+		end
+		GDKPd_PotData.playerBalance[data] = GDKPd_PotData.playerBalance[data]-bid1;
+		SendAddonMessage("GDKPD MANADJ",tostring(bid1) or 0,"WHISPER",data)
 		GDKPd.balance:Update()
 		if GDKPd.opt.linkBalancePot then
-			GDKPd_PotData.potAmount = GDKPd_PotData.potAmount+(tonumber(self.editBox:GetText()) or 0)
-			--tinsert(GDKPd_PotData.curPotHistory, tonumber(self.editBox:GetText()) or 0)
-			local bid1 = (tonumber(self.editBox:GetText()) or 0)*(-1)
-			if bid1 >0 then
-				bid1 = bid1*(-1);
-			end
+			GDKPd_PotData.potAmount = GDKPd_PotData.potAmount+bid1;
 			local name = ""
 			GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 			GDKPd.itemCount = GDKPd.itemCount + 1
@@ -1184,7 +1207,7 @@ status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 status.text:SetTextColor(1,1,1)
 status.text:SetJustifyH("LEFT")
 status.distribute = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.distribute:SetSize(80, 22)
+status.distribute:SetSize(75, 22)
 status.distribute:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 280)
 status.distribute:SetText("Distribute")
 status.distribute:SetScript("OnClick", function(self)
@@ -1192,10 +1215,23 @@ status.distribute:SetScript("OnClick", function(self)
 	status:Update()
 end)
 
+--Insert 
+status.text = status:CreateFontString()
+status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.text:SetTextColor(1,1,1)
+status.text:SetJustifyH("LEFT")
+status.insertPlayerBalance = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.insertPlayerBalance:SetSize(52, 22)
+status.insertPlayerBalance:SetPoint("LEFT", status.distribute, "RIGHT", 0, 0)
+status.insertPlayerBalance:SetText("Insert")
+status.insertPlayerBalance:SetScript("OnClick", function(self)
+	StaticPopup_Show("GDKPD_INSERTPLAYER");	
+end)
+
 -- ADD/ REMOVE GOLD FROM PLAYERS
 status.addPlayerValueButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.addPlayerValueButton:SetSize(22,22)
-status.addPlayerValueButton:SetPoint("LEFT", status.distribute, "RIGHT", 47, 0)
+status.addPlayerValueButton:SetPoint("LEFT", status.distribute, "RIGHT", 53, 0)
 status.addPlayerValueLabel = status.addLoot:CreateFontString()
 status.addPlayerValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addPlayerValueLabel:SetText("+")
@@ -4568,17 +4604,15 @@ function status:Update()
 		GDKPd.status.distribute:Disable();
 		GDKPd.status.removePot:Enable();
 	end
-	
+
 	--Enable/Disable Buttons depending on whether loot item is selected or not
 	if status.BossLootTable:GetSelection() then
 		GDKPd.status.removeLoot:Enable();
-		GDKPd.status.addLoot:Enable();
 		GDKPd.status.editLoot:Enable();
 		GDKPd.status.linkLoot:Enable();
 		GDKPd.status.bidLoot:Enable();
 		GDKPd.status.tradeLoot:Enable();
 	else
-		GDKPd.status.addLoot:Disable();
 		GDKPd.status.removeLoot:Disable();
 		GDKPd.status.editLoot:Disable();
 		GDKPd.status.linkLoot:Disable();
@@ -4647,6 +4681,14 @@ function GDKPd:PlayerBalanceTableUpdate()
 				intCount = intCount + 1
 				PlayerBalanceTableData[intCount] = {intCount, "|c"..classColor..i, costColor..v};
 			end 
+
+			if balance == 0 then 
+				classColor = GDKPd:getClassColorFromName(i)
+				--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: classColor: " ..classColor)
+				intCount = intCount + 1
+				PlayerBalanceTableData[intCount] = {intCount, "|c"..classColor..i, "|cff9d8e8d"..v};
+			end 
+
 		end
 		--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: outside for" )
 	end 
