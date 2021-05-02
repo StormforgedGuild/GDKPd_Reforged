@@ -110,6 +110,7 @@ StaticPopupDialogs["GDKPD_SLIMMLWARN"] = {
 	showAlert=true,
 	cancels="GDKPD_SLIMMLWARN",
 }
+
 StaticPopupDialogs["GDKPD_ADDTOPOT"] = {
 	text=L["Enter the amount you want to add to the pot:"],
 	button1=ADD,
@@ -174,7 +175,7 @@ StaticPopupDialogs["GDKPD_REMFROMPOT"] = {
 }
 
 StaticPopupDialogs["GDKPD_INSERTPLAYER"] = {
-	text="Enter the player name you want to add to the pot:",
+	text="Enter the player name you want to add to the distibution list:",
 	button1=ADD,
 	button2=CANCEL,
 	hasEditBox=true,
@@ -1195,14 +1196,6 @@ status.removePotValueButton:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_REMFROMPOT")
 end)
 
--- LINE ABOVE ATTENDEE LIST
-local l = status:CreateLine()
-print(l)
-l:SetThickness(1)
-l:SetColorTexture(235,231,223,.5)
-l:SetStartPoint("TOPLEFT",20,-200)
-l:SetEndPoint("TOPLEFT",185,-200)
-
 --DISTRIBUTE 
 status.text = status:CreateFontString()
 status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
@@ -1210,12 +1203,34 @@ status.text:SetTextColor(1,1,1)
 status.text:SetJustifyH("LEFT")
 status.distribute = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.distribute:SetSize(75, 22)
-status.distribute:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 280)
+status.distribute:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 290)
 status.distribute:SetText("Distribute")
 status.distribute:SetScript("OnClick", function(self)
 	GDKPd:DistributePot()
 	status:Update()
 end)
+
+--RESET PLAYER BALANCE 
+status.text = status:CreateFontString()
+status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.text:SetTextColor(1,1,1)
+status.text:SetJustifyH("LEFT")
+status.resetPlayerBalance = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.resetPlayerBalance:SetSize(52, 22)
+status.resetPlayerBalance:SetPoint("LEFT", status.distribute, "RIGHT", 0, 0)
+status.resetPlayerBalance:SetText("Reset")
+status.resetPlayerBalance:SetScript("OnClick", function(self)
+	GDKPd.ResetDisribution()
+	status.Update()
+end)
+
+-- LINE ABOVE DISTRIBUTION LIST
+local l = status:CreateLine()
+print(l)
+l:SetThickness(1)
+l:SetColorTexture(235,231,223,.5)
+l:SetStartPoint("TOPLEFT",20,-225)
+l:SetEndPoint("TOPLEFT",185,-225)
 
 --Insert 
 status.text = status:CreateFontString()
@@ -1224,7 +1239,7 @@ status.text:SetTextColor(1,1,1)
 status.text:SetJustifyH("LEFT")
 status.insertPlayerBalance = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.insertPlayerBalance:SetSize(52, 22)
-status.insertPlayerBalance:SetPoint("LEFT", status.distribute, "RIGHT", 0, 0)
+status.insertPlayerBalance:SetPoint("TOP", status.distribute, "BOTTOMLEFT", 25, -10)
 status.insertPlayerBalance:SetText("Insert")
 status.insertPlayerBalance:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_INSERTPLAYER");	
@@ -1233,7 +1248,7 @@ end)
 -- ADD/ REMOVE GOLD FROM PLAYERS
 status.addPlayerValueButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.addPlayerValueButton:SetSize(22,22)
-status.addPlayerValueButton:SetPoint("LEFT", status.distribute, "RIGHT", 53, 0)
+status.addPlayerValueButton:SetPoint("LEFT", status.insertPlayerBalance, "RIGHT", 77, 0)
 status.addPlayerValueLabel = status.addLoot:CreateFontString()
 status.addPlayerValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addPlayerValueLabel:SetText("+")
@@ -1261,13 +1276,13 @@ end)
 --Player Balance TABLE
 local GDKPd_PlayerBalanceTableColDef = {
     {["name"] = "", ["width"] = 1},                            -- invisible column for storing the player number index from the raidlog-table
-    {["name"] = "Name", ["width"] = 110},
-    {["name"] = "$$$", ["width"] = 30},
+    {["name"] = "Name", ["width"] = 100},
+    {["name"] = "$$$", ["width"] = 40},
 };
 
-status.PlayerBalanceTable = ScrollingTable:CreateST(GDKPd_PlayerBalanceTableColDef,18, 12, nil, status);           
+status.PlayerBalanceTable = ScrollingTable:CreateST(GDKPd_PlayerBalanceTableColDef,18, 10, nil, status);           
 status.PlayerBalanceTable.head:SetHeight(15);                                                                    
-status.PlayerBalanceTable.frame:SetPoint("TOPLEFT", status.distribute, "BOTTOMLEFT", 0 , -20);
+status.PlayerBalanceTable.frame:SetPoint("TOPLEFT", status.insertPlayerBalance, "BOTTOMLEFT", 0 , -18);
 status.PlayerBalanceTable:EnableSelection(true);
 status.PlayerBalanceTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
@@ -1276,6 +1291,13 @@ status.PlayerBalanceTable:RegisterEvents({
 		return true
 	end,
 })
+
+--DISTRIBUTION TOTAL
+status.distributionTotal = status:CreateFontString()
+status.distributionTotal:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.distributionTotal:SetTextColor(1,1,1)
+status.distributionTotal:SetPoint("BOTTOM", status.PlayerBalanceTable.frame, "BOTTOMLEFT", 85, -15)
+status.distributionTotal:SetJustifyH("LEFT")
 
 --SHOW AUCTION HISTORY
 --[[status.itemhistory = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -2614,6 +2636,12 @@ function GDKPd:FetchFrameFromLink(itemLink)
 	end
 end
 function GDKPd:PlayerIsML(playerName, invert)
+
+	if IsRaidLeader(playerName) then
+		--GDKPd_Debug("I am Raid Leader")
+		return true
+	end
+
 	for raidID = (invert and GetNumGroupMembers() or 1), (invert and 1 or GetNumGroupMembers()), (invert and -1 or 1) do
 		local name, _, _, _, _,_,_,_,_,_,isML = GetRaidRosterInfo(raidID)
 		if playerName == name then
@@ -2944,6 +2972,12 @@ function GDKPd:DistributePot()
 	if distAmount <= 0 then return end
 	local numadditionalmemb = self.opt.AdditonalRaidMembersAmount
 	if self.opt.AdditionalRaidMembersEnable then
+		for i=1, numadditionalmemb do
+			if self.opt.AdditionalRaidMembersEnable then
+				GDKPd_PotData.playerBalance["Extra cut #"..i] = GDKPd_PotData.playerBalance["Extra cut #"..i]+math.floor((distAmount or 0)/(numraid+numadditionalmemb))
+			end
+		end
+
 		SendChatMessage(("Distributing pot. Pot size: %d gold. Amount to distribute: %d gold. Players in raid: %d(%d). Share per player: %d gold."):format((GDKPd_PotData.potAmount or 0), distAmount, numraid,numadditionalmemb, (distAmount or 0)/(numraid+numadditionalmemb)),"RAID")
 	else
 		SendChatMessage(("Distributing pot. Pot size: %d gold. Amount to distribute: %d gold. Players in raid: %d. Share per player: %d gold."):format((GDKPd_PotData.potAmount or 0), distAmount, numraid, (distAmount or 0)/numraid),"RAID")
@@ -4549,7 +4583,7 @@ function GDKPd:stringtodate(timeString)
 end
 
 ---------------------
--- UPDATE THE DISPLAYED GOLD --
+-- UPDATE THE STATUS FRAME
 ---------------------
 function status:Update()
 
@@ -4559,6 +4593,10 @@ function status:Update()
 	GDKPd:BossLootTableUpdate();
 	--Refresh PlayerBalance
 	GDKPd:PlayerBalanceTableUpdate()
+
+	--Set the Summary Totals
+	GDKPd:SetPlayerBalanceTotal()
+
 	--Refresh to the Pot value
 	local potAmount;
 	local lastDist;
@@ -4654,9 +4692,30 @@ function GDKPd:IsActivePotSelected()
 end
 
 ------------------------
+-- Reset the Distribution
+------------------------
+function GDKPd:ResetDisribution()
+
+	GDKPd_Debug("Reset Distribution Called")
+	GDKPd_PotData.playerBalance = setmetatable({},{__index=function() return 0 end})
+    GDKPd_PotData.prevDist = 0;
+end
+
+------------------------
+-- Calculate Display Player Distribution Total 
+------------------------
+function GDKPd:SetPlayerBalanceTotal()
+
+	local balanceTotal = 0;
+	for i, v in pairs(GDKPd_PotData.playerBalance) do
+		balanceTotal = balanceTotal + tonumber(v)
+	end
+	GDKPd.status.distributionTotal:SetText(("Total Distribution: %d|cffffd100g|r"):format(balanceTotal))
+end
+
+------------------------
 -- PlayerBalance Table--
 ------------------------
-
 function GDKPd:PlayerBalanceTableUpdate()
 	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: method fired!")
 	local PlayerBalanceTableData = {};
