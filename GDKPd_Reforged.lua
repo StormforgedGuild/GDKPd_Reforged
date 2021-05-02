@@ -2684,7 +2684,7 @@ function GDKPd:UpdateItemInPot(link, bid, bname, index)
 	GDKPd_Debug("UpdateItemInPot: index: " ..index)
 	GDKPd_PotData.curPotHistory[index]["bid"]=bid
 	GDKPd_PotData.curPotHistory[index]["name"]=bname
-	GDKPd:BossLootTableUpdate()
+	status:Update()
 end
 
 function GDKPd:DoAuction(link, index)
@@ -2753,6 +2753,7 @@ function GDKPd:FinishAuction(link)
 				end
 			else
 				SendChatMessage(("Auction finished for %s. No bids recieved."):format(link),"RAID")
+				self:UpdateItemInPot(link, 0, "unassigned", self.curAuction.index)
 			end
 			aucdata:Release()
 		end
@@ -2760,6 +2761,7 @@ function GDKPd:FinishAuction(link)
 	else
 		-- old code
 		table.sort(self.curAuction.bidders, function(a,b) return a.bidAmount > b.bidAmount end)
+		local aucitem = self.curAuction.item
 		if self.curAuction.bidders[1] then
 			local totalAmount = self.curAuction.bidders[1].bidAmount
 			local remAmount = totalAmount
@@ -2784,7 +2786,7 @@ function GDKPd:FinishAuction(link)
 			end
 			--using new add method
 			--GDKPd_Debug("self.curAuction.bidders: self.curAuction.item: " ..self.curAuction.item.. " totalAmount: " ..totalAmount.. " self.curAuction.bidders[1].bidderName: " ..self.curAuction.bidders[1].bidderName)
-			local aucitem = self.curAuction.item
+			--local aucitem = self.curAuction.item
 			local bidamt = tonumber(totalAmount)
 			local winname = self.curAuction.bidders[1].bidderName
 			GDKPd_Debug("self.curAuction.bidders: aucitem: " ..aucitem.. " bidamt: " ..bidamt.. " winname: " ..winname, "self.curAuction.index: " ..self.curAuction.index)
@@ -2812,6 +2814,7 @@ function GDKPd:FinishAuction(link)
 			end
 		else
 			SendChatMessage("Auction finished. No bids recieved.","RAID")
+			self:UpdateItemInPot(aucitem, 0, "unassigned", self.curAuction.index)
 		end
 		self.curAuction.bidders:Release()
 		table.wipe(self.curAuction)
@@ -4480,28 +4483,30 @@ function GDKPd:PlayerBalanceTableUpdate()
 	local intCount = 0
 	local curBalance = GDKPd_PotData.playerBalance 
 	
-
-	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: #playerBalance: " ..#curBalance)
-	for i, v in pairs(curBalance) do
-		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: inside for" )
-		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: i: " ..i)
-		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: v: " ..v)
-		local classColor = "ff9d9d9d"
-		local costColor = "|cff61ff5a"
-		local balance = tonumber(v)
-		if balance < 0 then
-			GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: balance: " ..balance)
-			costColor = "|cffff0000"
+	-- put in check for active pot selected
+	if GDKPd:IsActivePotSelected() then 
+		--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: #playerBalance: " ..#curBalance)
+		for i, v in pairs(curBalance) do
+			--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: inside for" )
+			--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: i: " ..i)
+			--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: v: " ..v)
+			local classColor = "ff9d9d9d"
+			local costColor = "|cff61ff5a"
+			local balance = tonumber(v)
+			if balance < 0 then
+				--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: balance: " ..balance)
+				costColor = "|cffff0000"
+			end
+			if balance ~= 0 then 
+				classColor = GDKPd:getClassColorFromName(i)
+				--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: classColor: " ..classColor)
+				intCount = intCount + 1
+				PlayerBalanceTableData[intCount] = {intCount, "|c"..classColor..i, costColor..v};
+			end 
 		end
-		if balance ~= 0 then 
-			classColor = GDKPd:getClassColorFromName(i)
-			GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: classColor: " ..classColor)
-			intCount = intCount + 1
-			PlayerBalanceTableData[intCount] = {intCount, "|c"..classColor..i, costColor..v};
-		end 
-	end
-	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: outside for" )
-	--table.sort(PlayerBalanceTableData, function(a, b) return (a[1] > b[1]); end);
+		--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: outside for" )
+	end 
+	table.sort(PlayerBalanceTableData, function(a, b) return (a[1] > b[1]); end);
 	status.PlayerBalanceTable:SetData(PlayerBalanceTableData, true);
 end
 
@@ -4686,9 +4691,9 @@ function GDKPd:getClassColorFromName(name)
 	--GDKPd_Debug("GDKPd:getClassColorFromName: name: "..name)
 	local playerClass, classFilename, classId = UnitClass(name)
 	if (playerClass) then 
-		GDKPd_Debug("GDKPd:getClassColorFromName:  playerClass: "..playerClass)
+		--GDKPd_Debug("GDKPd:getClassColorFromName:  playerClass: "..playerClass)
 	else
-		GDKPd_Debug("GDKPd:getClassColorFromName: playerClass: isNull")
+		--GDKPd_Debug("GDKPd:getClassColorFromName: playerClass: isNull")
 	end
 	local classColor = GDKPd:getClassColor(playerClass);  
 	--GDKPd_Debug("GDKPd:getClassColorFromName: classColor: "..classColor)
