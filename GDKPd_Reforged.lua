@@ -568,15 +568,25 @@ local BossLootTableColDef = {
         end,
     },
     {["name"] = "Name", ["width"] = 120},
-    {["name"] = "Looter", ["width"] = 85},
+    {["name"] = "Winner", ["width"] = 85},
     {["name"] = "Price", ["width"] = 45},
     {["name"] = "", ["width"] = 1},                            -- invisible column for itemString (needed for tooltip)
     {["name"] = "Time", ["width"] = 45},
     {                                                          -- col for OffSpec
     ["name"] = "Done", 
     ["width"] = 30,
- --   ["DoCellUpdate"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, fShow, self, ...)
---    end,
+    ["DoCellUpdate"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, fShow, self, ...)
+		if fShow then
+            local itemId = self:GetCell(realrow, column);
+            --MRT_Debug("DoCellUpdateCB: Column: " ..column);
+            
+            if itemId then
+                cellFrame:SetBackdrop( { bgFile = "Interface\\BUTTONS\\ui-checkbox-check", insets = { left = 0, right = 2, top = 2, bottom = 2 }, } );
+            else
+                cellFrame:SetBackdrop(nil);
+            end
+        end
+    end,
     },                  
 };
 --Tooltip declaration
@@ -643,6 +653,9 @@ status.bidLoot:SetFontString(status.bidLootFont)
 status.bidLoot:SetPoint("LEFT", status.linkLoot, "RIGHT", 3, 0 );
 status.bidLoot:SetScript("OnClick", function() GDKPd:bidLoot_click(); end);
 
+---------------------
+--BID onlick event --
+---------------------
 function GDKPd:bidLoot_click()
 	
     local loot_select = status.BossLootTable:GetSelection();
@@ -664,6 +677,291 @@ status.tradeLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.tradeLootFont:SetText("Trade")
 status.tradeLoot:SetFontString(status.tradeLootFont)
 status.tradeLoot:SetPoint("LEFT", status.bidLoot, "RIGHT", 3, 0 );
+status.tradeLoot:SetScript("OnClick", function() GDKPd:tradeLoot_click(); end);
+status.BagFreeSlots = 0;
+status.TradeInitiated = false;
+status.LootTradePartner = ""
+status.TradeItemList = {}
+status.tooltipForParsing = CreateFrame("GameTooltip", "GDKPd_Tooltip_Parse", nil, "GameTooltipTemplate")
+status.tooltipForParsing:UnregisterAllEvents() -- Don't use GameTooltip for parsing, because GameTooltip can be hooked by other addons.
+
+------------------------
+--Trade onClick Event --
+------------------------
+function GDKPd:tradeLoot_click()
+	GDKPd_Debug("GDKPd:tradeLoot_click fired!")
+	local tradePartnerName = UnitName("NPC");
+    if not tradePartnerName then 
+		GDKPd_Debug("GDKPd:tradeLoot_click: no active trade, find and follow")
+        local PName = cleanString(GDKPd:GetLootPlayer(),true)
+        if (PName ~= -1) then
+           doFollowTrade(PName)
+        else
+            return -1;
+        end
+    else 
+        GDKPd:TradeItems()
+		GDKPd:TradeItems()
+    end
+end
+
+--Populate trade window -- 
+--puts all items the person with the trade window is supposed to receive in their trade window.
+function GDKPd:TradeItems()
+
+    --disable animation once clicked
+    --stopEncouragingTrade();
+    GDKPd_Debug("GDKPd:TradeItems: Clicked!")
+    status.BagFreeSlots = GDKPd:GetBagFreeSlots()
+    status.TradeInitiated = true;
+    
+    --get the items the person is supposed to get
+    local itemsToTrade = GDKPd:GetTradeableItems();
+    if not itemsToTrade then 
+        --nothing to trade
+        GDKPd_Debug("MRT_GUI_TradeLink: nothing to trade")
+        return;
+    end
+    
+    -----------------------------------------------------------------
+    --Find those items in my bag & trade them
+    -----------------------------------------------------------------
+    for i in pairs(itemsToTrade) do
+         local foundInBag, containerID, slotID = GDKPd:findItemInBag(itemsToTrade[i]);
+         if foundInBag then
+            --GDKPd_Debug("MRT_GUI_TradeLink: Found item "..sName.." at"..containerID.. slotID)
+            --Validate that the item is tradeable by looking at the loot timer
+            local timeRemaining = GDKPd:GetContainerItemTradeTimeRemaining(containerID, slotID);
+            if timeRemaining>0 then
+                local itemAlreadyTraded = false;
+
+                --make sure the same item hasn't already been put in the loot window - ex. two aq40 weapon tokens are in your bag
+                for j=1, 7 do
+                    local name, texture, quantity, quality, isUsable, enchant =  GetTradePlayerItemInfo(j);
+                    if name == itemsToTrade[i] then
+                        itemAlreadyTraded = true;
+                    end
+                end
+
+                --make sure the person hasn't already gotten traded that item, as it's been marked traded
+                --for u, v in ipairs(MRT_RaidLog[GetSelectedRaid()]["Loot"]) do
+
+                --    if v["ItemName"] == itemsToTrade[i] then
+                 --       if v["Traded"] == true then
+                 --            itemAlreadyTraded = true;
+                 --            MRT_Print("Yo, you were already traded "..itemsToTrade[i]);
+                --         end
+                --    end
+                --end
+   
+                if itemAlreadyTraded == false then
+                    --Place those items in the trade window
+                    GDKPd_Debug("about to use item: "..containerID.." "..slotID)
+                    GDKPd_Debug("MRT_GUI_TradeLInk: click on item")
+                    local intMax = 0;
+                    local iCountBefore = GetNumberOfItemsInTrade()
+                    local iCountAfter = 0;
+                    while intMax < 10 do
+                        GDKPd_Debug("MRT_GUI_TradeLInk: in while loop")
+                        GDKPd_Debug("MRT_GUI_TradeLInk: about to click item: intMax: " ..tostring(intMax).. " iCountBefore: " ..tostring(iCountBefore).. " iCountAfter: " ..tostring(iCountAfter))
+                        UseContainerItem(containerID,slotID);
+                        iCountAfter = GetNumberOfItemsInTrade();
+                        if not iCountAfter then
+                            --returned nil trade window might be gone.. return
+                            return;
+                        end
+                        GDKPd_Debug("MRT_GUI_TradeLInk: Clicked item: iCountAfter: " ..tostring(iCountAfter))
+                        if (iCountAfter > iCountBefore) then 
+                            GDKPd_Debug("MRT_GUI_TradeLInk: iCountAfter > iCountBefore: set intMax to 5 to exit loop")
+                            intMax = 10;
+                        else
+                            GDKPd_Debug("MRT_GUI_TradeLInk: iCountAfter < = iCountBefore: increment and try again")
+                            intMax = intMax + 1    
+                            
+                        end 
+                    end 
+                end
+            end
+         end
+    end
+end
+
+function GDKPd:GetBagFreeSlots()
+    local intSlots = 0
+    for container = 0, 5 do
+        intSlots = intSlots + GetContainerNumFreeSlots(container)
+    end
+    return intSlots
+end
+
+function GDKPd:GetTradeableItems()
+
+    --Get name of player with an open trade window
+    local tradePartnerName = UnitName("NPC");
+    if not tradePartnerName then 
+        return nil;
+    end
+    status.LootTradePartner = tradePartnerName;
+    GDKPd_Debug("MRT_GetTradeableItems: tradePartnerName: " ..tradePartnerName);
+    local itemsToTrade = {};
+
+    -----------------------------------------------------------------
+    --Get list of items that person is the looter for in the loot list
+    -----------------------------------------------------------------
+    --GDKPd_Debug("MRT_GUI_BossLootTableUpdate: if bossnum condition");
+    local index = 1;
+    for i, v in ipairs(GDKPd_PotData.curPotHistory) do
+		local traded = v["traded"]
+		if traded == nil then
+			traded = false
+		end
+        if v["name"] == tradePartnerName and not(traded) then
+            itemsToTrade[index] = v["itemName"];
+            tinsert(status.TradeItemList,v["ItemName"]);
+            GDKPd_Debug(tradePartnerName.. " should receive "..itemsToTrade[index]);
+        end
+        index = index + 1;
+    end
+    return itemsToTrade;
+
+end
+
+--returns true/false, container, and slot numbers of the item found. 
+function GDKPd:findItemInBag(name)
+    local c,s,t
+    for container=0, 5 do
+        if GetContainerNumSlots(container) > 0 then
+            for slot=1, GetContainerNumSlots(container) or 0 do
+      --        GDKPd_Debug("Iterating through bag #"..container.." at slot #"..slot)
+                local itemLink = GetContainerItemLink(container, slot);
+                if itemLink then
+                    local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = GetItemInfo(itemLink);
+                    if name == sName then
+    --                    GDKPd_Debug("Found item "..sName.." at"..container.. slot)  
+                        return true, container, slot
+                    end
+                end
+            end
+        end
+    end
+    return false, -1, -1
+end
+
+-- Return the remaining trade time in second for an item in the container.
+-- Return math.huge(infinite) for an item not bounded.
+-- Return the remaining trade time in second if the item is within 2h trade window.
+-- Return 0 if the item is not tradable (bounded and the trade time has expired.)
+function GDKPd:GetContainerItemTradeTimeRemaining(container, slot)
+	status.tooltipForParsing:SetOwner(UIParent, "ANCHOR_NONE") -- This lines clear the current content of tooltip and set its position off-screen
+	status.tooltipForParsing:SetBagItem(container, slot) -- Set the tooltip content and show it, should hide the tooltip before function ends
+    if not status.tooltipForParsing:NumLines() or status.tooltipForParsing:NumLines() == 0 then
+        GDKPd_Debug("GetContainerItemTradeTimeRemaining: first chance return")
+        return 0
+	end
+
+	local bindTradeTimeRemainingPattern = escapePatternSymbols(BIND_TRADE_TIME_REMAINING):gsub("%%%%s", "%(%.%+%)") -- PT locale contains "-", must escape that.
+	local bounded = false
+
+	for i = 1, status.tooltipForParsing:NumLines() or 0 do
+		local line = getglobal(status.tooltipForParsing:GetName()..'TextLeft' .. i)
+		if line and line.GetText then
+			local text = line:GetText() or ""
+			if text == ITEM_SOULBOUND or text == ITEM_ACCOUNTBOUND or text == ITEM_BNETACCOUNTBOUND then
+				bounded = true
+			end
+
+			local timeText = text:match(bindTradeTimeRemainingPattern)
+			if timeText then -- Within 2h trade window, parse the time text
+				status.tooltipForParsing:Hide()
+
+				for hour=1, 0, -1 do -- time>=60s, format: "1 hour", "1 hour 59 min", "59 min", "1 min"
+					local hourText = ""
+					if hour > 0 then
+						hourText = CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_HOURS, hour)
+					end
+					for min=59,0,-1 do
+						local time = hourText
+						if min > 0 then
+							if time ~= "" then
+								time = time..TIME_UNIT_DELIMITER
+							end
+							time = time..CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_MIN, min)
+						end
+
+						if time == timeText then
+							return hour*3600 + min*60
+						end
+					end
+				end
+				for sec=59, 1, -1 do -- time<60s, format: "59 s", "1 s"
+					local time = CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_SEC, sec)
+                    if time == timeText then
+                        GDKPd_Debug("GetContainerItemTradeTimeRemaining: second chance return")
+						return sec
+					end
+				end
+				-- As of Patch 7.3.2(Build 25497), the parser have been tested for all 11 in-game languages when time < 1h and time > 1h. Shouldn't reach here.
+                -- If it reaches here, there are some parsing issues. Let's return 2h.
+                GDKPd_Debug("GetContainerItemTradeTimeRemaining: third chance return")
+				return 7200
+			end
+		end
+	end
+	status.tooltipForParsing:Hide()
+    if bounded then
+        GDKPd_Debug("GetContainerItemTradeTimeRemaining: fourth chance return")
+        --tooltipForParsing:Hide()
+		return 0
+    else
+        GDKPd_Debug("GetContainerItemTradeTimeRemaining: fifth chance return")
+        --tooltipForParsing:Hide()
+		return math.huge
+	end
+end
+
+--use this function to get player to trade with
+
+function GDKPd:GetLootPlayer()
+    local loot_select = status.BossLootTable:GetSelection();
+    if (loot_select == nil) then
+        GDKPd_Debug("No loot selected");
+        return -1;
+    end
+    local playerName = status.BossLootTable:GetCell(loot_select, 4);
+    GDKPd_Debug("GetLootPlayer: playerName: " ..playerName)
+    return playerName
+end
+
+function GDKPd:MarkAsTraded()
+
+    GDKPd_Debug("Checking for items to mark traded")
+
+    --Get name of player with an open trade window
+    --local tradePartnerName = UnitName("NPC");
+    --local itemsToTrade = {};
+
+    --check for all the items that are being traded
+    --for j=1, 7 do
+        --local tradedItemName, texture, quantity, quality, isUsable, enchant =  GetTradePlayerItemInfo(j);
+    for i2, v2 in pairs(MRT_TradeItemsList) do
+        --if tradedItemName then
+          --MRT_Debug("Checking if this item should be marked traded: "..tradedItemName
+        --end
+        --iterate through all the items in the raid log to see if it's an item that dropped being traded to it's new owner.
+        for i, v in ipairs(MRT_RaidLog[raidnum]["Loot"]) do
+            if v["Looter"] == status.LootTradePartner then
+                if v2 == v["ItemName"] then
+                 GDKPd_Debug(status.LootTradePartner.. " has been traded "..v2);
+                  v["Traded"] = true;
+                end
+            end
+        end
+    end
+
+    --Refresh the Loot UI
+    status.LootTradePartner = "";
+    MRT_TradeItemsList = {};
+end
 
 --LOOT LINE
 status.lootLine = status:CreateLine()
@@ -2335,7 +2633,7 @@ function GDKPd:AddItemToPot(link, bid, bname, select)
 	GDKPd_Debug("AddItemToPot: lootername: " ..name)
 	local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = GDKPd:GetDetailedItemInformation(link);
 	GDKPd.itemCount = GDKPd.itemCount + 1
-	tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
+	tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time(), traded=false})
 	local loottable = GDKPd:BossLootTableUpdate()
 	if select then 
 		if loottable then 
@@ -3928,6 +4226,20 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			end
 		end
 	end
+	if (event == "BAG_UPDATE") then
+        if status.TradeInitiated then 
+            local freeSlotsNow = GetBagFreeSlots();
+            GDKPd_Debug("Bag_Update: freeSlotsNow: " ..tostring(freeSlotsNow));
+            GDKPd_Debug("Bag_Update: MRT_BagFreeSlots: " ..tostring(MRT_BagFreeSlots));
+            if freeSlotsNow > MRT_BagFreeSlots then
+                GDKPd_Debug("Trade worked: Free slots is more update" );
+                --stopEncouragingTrade();
+                GDKPd:MarkAsTraded();
+            end
+            status.TradeInitiated = false;
+        end
+        status:Update();
+	end
 	-- release table back into the pool of usable tables
 	arg:Release()
 end)
@@ -3975,6 +4287,7 @@ GDKPd:RegisterEvent("MAIL_INBOX_UPDATE")
 GDKPd:RegisterEvent("MAIL_CLOSED")
 --Loot events
 GDKPd:RegisterEvent("CHAT_MSG_LOOT")
+GDKPd:RegisterEvent("BAG_UPDATE")
 
 --chat filters
 local function filterChat_CHAT_MSG_RAID(chatframe,event,msg)
@@ -4157,10 +4470,12 @@ function GDKPd:PlayerBalanceTableUpdate()
 			GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: balance: " ..balance)
 			costColor = "|cffff0000"
 		end
-		classColor = GDKPd:getClassColorFromName(i)
-		GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: classColor: " ..classColor)
-		intCount = intCount + 1
-		PlayerBalanceTableData[intCount] = {intCount, "|c"..classColor..i, costColor..v};
+		if balance ~= 0 then 
+			classColor = GDKPd:getClassColorFromName(i)
+			GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: classColor: " ..classColor)
+			intCount = intCount + 1
+			PlayerBalanceTableData[intCount] = {intCount, "|c"..classColor..i, costColor..v};
+		end 
 	end
 	GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: outside for" )
 	--table.sort(PlayerBalanceTableData, function(a, b) return (a[1] > b[1]); end);
@@ -4213,18 +4528,6 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
     local classColor = "ff9d9d9d"     
 	if #curPot > 0 then 
 		for i, v in ipairs(curPot) do
-			--BossLootTableData[index] = {i, v["ItemId"], "|c"..v["itemColor"]..v["itemName"].."|r", v["Looter"], v["DKPValue"], v["ItemLink"], v["Note"]};
-			-- SF: if unassigned, make it red.
-			
-			--Set Class Color
-			--[[ GDKPd_Debug("BossLootTableUpdate: v['name']: "..v["name"])
-			local playerClass, classFilename, classId = UnitClass(v["name"])
-			if (playerClass) then 
-				GDKPd_Debug("BossLootTableUpdate: playerClass: "..playerClass)
-			else
-				GDKPd_Debug("BossLootTableUpdate: playerClass: isNull")
-			end
-			classColor = GDKPd:getClassColor(playerClass);   ]]
 			classColor = GDKPd:getClassColorFromName(v["name"])
 			--GDKPd_Debug("BossLootTableUpdate: classColor: "..classColor)
 			--GDKPd_Debug("Row: "..v["itemName"])
@@ -4234,7 +4537,7 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
 			local lootTime = GDKPd:calculateLootTimeLeft(v["ltime"])
 
 			--SetDoneState
-			--local doneState = SetDoneState(v["Looter"], v["Traded"], v["itemName"])
+			local doneState = GDKPd:SetDoneState(v["Looter"], v["traded"], v["itemName"])
 
 			if not hasFilter then
 				--GDKPd_Debug("BossLootTableUpdate: hasFilter: " ..tostring(hasFilter) .." false, so do regular stuff");
@@ -4303,6 +4606,41 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
 	GDKPd:PlayerBalanceTableUpdate()
 	return BossLootTableData
 end
+
+function GDKPd:SetDoneState(looter, traded, itemName)
+
+    local doneState = false;
+
+    if (looter == "unassigned") then
+           return false;
+    end
+
+    --if it's assigned to disenchanted or bank... it's done
+    if (looter == "disenchanted") or (looter == "bank") then
+        return true;
+    end
+
+    --if it's been marked traded by the trade process.. it's done
+    if traded then
+        return true;
+    end
+
+    --if item is assigned to a player & not in your bag (or in your bag, but loot timer expired) set to done
+    local foundInBag, containerID, slotID = GDKPd:findItemInBag(itemName);
+    if not foundInBag then
+        --not in your bag .
+        doneState = true;
+    else
+        local timeRemaining = GDKPd:GetContainerItemTradeTimeRemaining(containerID, slotID);
+        if timeRemaining==0 then
+            --in your bag but not tradeable (loot timer expired), your done
+            doneState=true;
+        end
+    end
+
+    return doneState;
+end    
+
 
 function GDKPd:isLooterInSpecialFilter(looter, specialFilter)
     --return if looter is not in special filter
