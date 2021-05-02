@@ -248,6 +248,7 @@ StaticPopupDialogs["GDKPD_REMFROMPLAYER"] = {
 	timeout=0,
 	whileDead=true,
 }
+
 StaticPopupDialogs["GDKPD_MAILGOLD"]={
 	text=L["Are you sure you want to mail %s gold to player %s?"],
 	button1=L["Mail money"],
@@ -689,6 +690,10 @@ function status.removeLoot:removeSelectedLoot()
 	SendAddonMessage("GDKPD MANADJ",tostring(tonumber(bid) or 0),"WHISPER",playerName)
 	GDKPd.balance:Update()
 	tremove(GDKPd_PotData.curPotHistory, lootnum)
+	if GDKPd.opt.linkBalancePot then
+		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-(tonumber(bid) or 0)
+	end
+
 	status:Update()
 end
 
