@@ -695,7 +695,7 @@ function GDKPd:tradeLoot_click()
 		GDKPd_Debug("GDKPd:tradeLoot_click: no active trade, find and follow")
         local PName = cleanString(GDKPd:GetLootPlayer(),true)
         if (PName ~= -1) then
-           doFollowTrade(PName)
+           GDKPd:doFollowTrade(PName)
         else
             return -1;
         end
