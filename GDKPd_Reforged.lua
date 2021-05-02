@@ -624,6 +624,15 @@ status.lootFilter:SetAutoFocus(false) -- dont automatically focus
 status.lootFilter:SetFontObject("ChatFontNormal")
 status.lootFilter:SetPoint("TOP", status.BossLootTable.frame, "TOPLEFT", 60, 52);
 
+--ADD LOOT TO Active POT from History BUTTON
+status.addLootToActivePot= CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.addLootToActivePot:SetSize(125, 22)
+status.addLoottoActiveFont = status.addLootToActivePot:CreateFontString()
+status.addLoottoActiveFont:SetFont("Fonts/FRIZQT__.TTF",12)
+status.addLoottoActiveFont:SetText("Add to Active Pot")
+status.addLootToActivePot:SetFontString(status.addLoottoActiveFont)
+status.addLootToActivePot:SetPoint("LEFT", status.lootFilter, "RIGHT", 3, 0 );
+
 --ADD LOOT BUTTON
 status.addLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.addLoot:SetSize(22, 22)
@@ -2459,11 +2468,11 @@ export.toggleDefault:LockHighlight()
 
 function GDKPd:SetMovable(movable)
 	if movable then
-		anchor:EnableMouse(true)
-		anchor:Show()
+--		anchor:EnableMouse(true)
+--		anchor:Show()
 	else
-		anchor:EnableMouse(false)
-		anchor:Hide()
+--		anchor:EnableMouse(false)
+--		anchor:Hide()
 	end
 end
 function GDKPd:GetStartBid(id)
@@ -2846,6 +2855,10 @@ function GDKPd:DistributePot()
 	GDKPd_PotData.prevDist = GDKPd_PotData.potAmount
 	GDKPd.balance:Update()
 end
+
+--------------------------------------------------
+-- BID FRAME
+--------------------------------------------------
 function GDKPd:GetUnoccupiedFrame()
 	local c = 1
 	while GDKPd.frames[c] do
@@ -2881,6 +2894,14 @@ function GDKPd:GetUnoccupiedFrame()
 		c=c+1
 	end
 	local f = CreateFrame("Frame", "GDKPdBidFrame"..c, UIParent)
+	f:SetMovable(true)
+	f:SetScript("OnMouseDown", function(self)
+		self:StartMoving()
+	end)
+	f:SetScript("OnMouseUp", function(self)
+		self:StopMovingOrSizing()
+		GDKPd.opt.point.point, _, GDKPd.opt.point.relative, GDKPd.opt.point.x, GDKPd.opt.point.y = self:GetPoint()
+	end)
 	f:SetSize(300,60)
 	f:SetBackdrop({
 		bgFile="Interface\\Tooltips\\UI-Tooltip-Background",
@@ -4454,6 +4475,26 @@ function status:Update()
 	else
 		status.potText:SetText(("Pot: %d|cffffd100g|r"):format(potAmount))
 		status.potDistributeText:SetText("")
+	end
+
+	--Enable/Disable Buttons
+	if GDKPd:IsActivePotSelected() then
+		GDKPd.status.removeLoot:Show();
+		GDKPd.status.addLoot:Show();
+		GDKPd.status.editLoot:Show();
+		GDKPd.status.linkLoot:Show();
+		GDKPd.status.bidLoot:Show();
+		GDKPd.status.tradeLoot:Show();
+		GDKPd.status.addLootToActivePot:Hide();
+	else
+		GDKPd.status.addLoot:Hide();
+		GDKPd.status.removeLoot:Hide();
+		GDKPd.status.editLoot:Hide();
+		GDKPd.status.linkLoot:Hide();
+		GDKPd.status.bidLoot:Hide();
+		GDKPd.status.tradeLoot:Hide();
+		GDKPd.status.addLootToActivePot:Show();
+
 	end
 end
 
