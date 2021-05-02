@@ -717,9 +717,11 @@ end
 
 function status.removeLoot:removeSelectedLoot()
 	local link, lootnum, playerName, bid = status.BossLootTable:getInfofromSelection()
-	GDKPd_PotData.playerBalance[playerName] = (GDKPd_PotData.playerBalance[playerName]+(tonumber(bid) or 0))
-	SendAddonMessage("GDKPD MANADJ",tostring(tonumber(bid) or 0),"WHISPER",playerName)
-	GDKPd.balance:Update()
+	if playerName ~= "Raid" then 
+		GDKPd_PotData.playerBalance[playerName] = (GDKPd_PotData.playerBalance[playerName]+(tonumber(bid) or 0))
+		SendAddonMessage("GDKPD MANADJ",tostring(tonumber(bid) or 0),"WHISPER",playerName)
+		GDKPd.balance:Update()
+	end
 	tremove(GDKPd_PotData.curPotHistory, lootnum)
 	if GDKPd.opt.linkBalancePot then
 		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-(tonumber(bid) or 0)
