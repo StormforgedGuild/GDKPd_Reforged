@@ -677,6 +677,11 @@ status.addLoottoActiveFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.addLoottoActiveFont:SetText("Add to Active Pot")
 status.addLootToActivePot:SetFontString(status.addLoottoActiveFont)
 status.addLootToActivePot:SetPoint("LEFT", status.lootFilter, "RIGHT", 3, 0 );
+status.addLootToActivePot:SetScript("OnClick", function() GDKPd:addLootToActivePot_click(); end);
+
+function GDKPd:addLootToActivePot_click()
+	GDKPd_Debug("GDKPd:addLootToActivePot_click: Fired!")
+end
 
 --ADD LOOT BUTTON
 status.addLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -686,6 +691,40 @@ status.addLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addLootFont:SetText("+")
 status.addLoot:SetFontString(status.addLootFont)
 status.addLoot:SetPoint("LEFT", status.lootFilter, "RIGHT", 3, 0 );
+status.addLoot:SetScript("OnClick", function() GDKPd:addLoot_click(); end);
+
+StaticPopupDialogs["GDKPD_ADDLOOT"] = {
+	text="Shift-click an item to add:",
+	button1=ADD,
+	button2=CANCEL,
+	hasEditBox=true,
+	OnShow=function(self)
+		self.button1:Disable()
+		--need the following to enable itemlinks
+		hooksecurefunc("ChatEdit_InsertLink", function (link) if self.editBox:IsVisible() and self.editBox:HasFocus() then self.editBox:Insert(link); return true; end end)		
+	end,
+	EditBoxOnEnterPressed=function(self) self:GetParent().button1:Click() end,
+	EditBoxOnTextChanged = function(self)
+		if strlen(self:GetText()) > 0 then
+			self:GetParent().button1:Enable()
+		else
+			self:GetParent().button1:Disable()
+		end
+	end,
+	OnAccept=function(self, data)
+	    --GDKPd_PotData.playerBalance[self.editBox:GetText()] = GDKPd_PotData.playerBalance[self.editBox:GetText()] or 0
+		GDKPd:AddItemToPot(self.editBox:GetText(), 0, "unassigned", true)
+		GDKPd.status:Update()
+	end,
+	timeout=0,
+	whileDead=true,
+}
+
+
+function GDKPd:addLoot_click()
+	GDKPd_Debug("GDKPd:addLoot_click: Fired!")
+	StaticPopup_Show("GDKPD_ADDLOOT")
+end
 
 --REMOVE LOOT BUTTON
 status.removeLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
