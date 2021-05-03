@@ -346,7 +346,7 @@ do
 	-- @usage used internally.
 	-- @see Core.lua
 	local function CompareSort (self, rowa, rowb, sortbycol, groupby)
-		--GDKPd_Debug("ST:CompareSort Called!");
+		GDKPd_Debug("ST:CompareSort Called!");
 		local cella, cellb = self:GetCell(rowa, sortbycol), self:GetCell(rowb, sortbycol);
 		local a1, b1 = cella, cellb;
 		local a2, b2
@@ -419,8 +419,9 @@ do
 			a1, b1 = cleanString(a1), cleanString(b1);
 			--check for time sort
 			--call it some function
-			--GDKPd_Debug("ST:CompareSort: a1: " ..a1.." b1: " ..b1);
+			GDKPd_Debug("ST:CompareSort: a1: " ..a1.." b1: " ..b1);
 			a1, b1 = stringTimetonumberTime(a1), stringTimetonumberTime(b1);
+			GDKPd_Debug("ST:CompareSort: after stringTime: a1: " ..a1.." b1: " ..b1);
 		end
 		if (groupby == nil) or not groupby then
 			if a1 == b1 then
@@ -439,6 +440,7 @@ do
 					return false;
 				end
 			else
+
 				local direction = column.sort or column.defaultsort or "asc";
 				if direction:lower() == "asc" then
 					return a1 > b1;
@@ -456,27 +458,35 @@ do
 	function stringTimetonumberTime(sText1)
 		local retVal1
 		local cIndex = strfind(sText1, ":")
-		--GDKPd_Debug("ST:stringTimetonumberTime: Called!");
-		--GDKPd_Debug("ST:stringTimetonumberTime: sText" ..sText1);
-		if (cIndex) then GDKPd_Debug("ST:stringTimetonumberTime: cIndex" ..cIndex);end
+		GDKPd_Debug("ST:stringTimetonumberTime: Called!");
+		GDKPd_Debug("ST:stringTimetonumberTime: sText: " ..sText1);
+		if (cIndex) then GDKPd_Debug("ST:stringTimetonumberTime: cIndex: " ..cIndex);end
 		if not cIndex then
-			local isNum = string.find(sText1, "%d")
+			--[[ local isNum = string.find(sText1, "%d")
 			if not isNum then 
+				GDKPd_Debug("ST:stringTimetonumberTime: sText1: " ..sText1);
 				return sText1;
 			else
-				return tonumber(sText1)
-			end
+				local subText = string.sub(sText1,1,isNum-1)
+				GDKPd_Debug("ST:stringTimetonumberTime: subText: " ..subText)
+				retVal1 = tonumber(subText)-- + tonumber(string.sub(sText1,isNum))
+				GDKPd_Debug("ST:stringTimetonumberTime: retVal1: " ..tostring(retVal1));
+				return retVal1
+			end ]]
+			return sText1
 		end
 		retVal1 = cStrTimetoInt(sText1,cIndex)
+		GDKPd_Debug("ST:stringTimetonumberTime: retVal1: " ..retVal1);
 		return retVal1;
 	end
 	function cStrTimetoInt(sText, cIndex)
+		GDKPd_Debug("cStrTimetoInt: called! ");
 		local sH, sM;
 		sH = string.sub(sText,1,cIndex-1)
 		if not sH or sH == "" then
 			sH = 0;
 		end
-		--GDKPd_Debug("ST:stringTimetonumberTime: sH: " ..sH);
+		GDKPd_Debug("ST:stringTimetonumberTime: sH: " ..sH);
 		sM = string.sub(sText,cIndex+1)
 		if not sM or sM == "" then
 			sM = 0

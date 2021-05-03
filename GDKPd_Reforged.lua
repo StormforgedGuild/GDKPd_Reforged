@@ -991,7 +991,7 @@ function GDKPd:GetContainerItemTradeTimeRemaining(container, slot)
 				for hour=1, 0, -1 do -- time>=60s, format: "1 hour", "1 hour 59 min", "59 min", "1 min"
 					local hourText = ""
 					if hour > 0 then
-						hourText = CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_HOURS, hour)
+						hourText = GDKPd:CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_HOURS, hour)
 					end
 					for min=59,0,-1 do
 						local time = hourText
@@ -999,7 +999,7 @@ function GDKPd:GetContainerItemTradeTimeRemaining(container, slot)
 							if time ~= "" then
 								time = time..TIME_UNIT_DELIMITER
 							end
-							time = time..CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_MIN, min)
+							time = time..GDKPd:CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_MIN, min)
 						end
 
 						if time == timeText then
@@ -1008,7 +1008,7 @@ function GDKPd:GetContainerItemTradeTimeRemaining(container, slot)
 					end
 				end
 				for sec=59, 1, -1 do -- time<60s, format: "59 s", "1 s"
-					local time = CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_SEC, sec)
+					local time = GDKPd:CompleteFormatSimpleStringWithPluralRule(INT_SPELL_DURATION_SEC, sec)
                     if time == timeText then
                         GDKPd_Debug("GetContainerItemTradeTimeRemaining: second chance return")
 						return sec
@@ -1030,6 +1030,15 @@ function GDKPd:GetContainerItemTradeTimeRemaining(container, slot)
         GDKPd_Debug("GetContainerItemTradeTimeRemaining: fifth chance return")
         --tooltipForParsing:Hide()
 		return math.huge
+	end
+end
+
+function GDKPd:CompleteFormatSimpleStringWithPluralRule(str, count)
+	local text = format(str, count)
+	if count < 2 then
+		return text:gsub("|4(.+):(.+);", "%1")
+	else
+		return text:gsub("|4(.+):(.+);", "%2")
 	end
 end
 
@@ -2974,7 +2983,7 @@ function GDKPd:DistributePot()
 	if self.opt.AdditionalRaidMembersEnable then
 		for i=1, numadditionalmemb do
 			if self.opt.AdditionalRaidMembersEnable then
-				GDKPd_PotData.playerBalance["Extra cut #"..i] = GDKPd_PotData.playerBalance["Extra cut #"..i]+math.floor((distAmount or 0)/(numraid+numadditionalmemb))
+				GDKPd_PotData.playerBalance["Extracut"..i] = GDKPd_PotData.playerBalance["Extracut"..i]+math.floor((distAmount or 0)/(numraid+numadditionalmemb))
 			end
 		end
 
@@ -4753,7 +4762,7 @@ function GDKPd:PlayerBalanceTableUpdate()
 		end
 		--GDKPd_Debug("GDKPd:PlayerBalanceTableUpdate: outside for" )
 	end 
-	table.sort(PlayerBalanceTableData, function(a, b) return (a[1] > b[1]); end);
+	table.sort(PlayerBalanceTableData, function(a, b) return (a[2] > b[2]); end);
 	status.PlayerBalanceTable:SetData(PlayerBalanceTableData, true);
 end
 
@@ -4940,6 +4949,7 @@ function GDKPd:getClassColorFromName(name)
 	if (playerClass) then 
 		--GDKPd_Debug("GDKPd:getClassColorFromName:  playerClass: "..playerClass)
 	else
+		playerClass = name
 		--GDKPd_Debug("GDKPd:getClassColorFromName: playerClass: isNull")
 	end
 	local classColor = GDKPd:getClassColor(playerClass);  
@@ -4975,6 +4985,10 @@ function GDKPd:getClassColor(class)
     then classColor = "ff9d8e8d";
     elseif class == "disenchanted"
     then classColor = "ff9d8e8d";
+	elseif class == "Raid"
+	then classColor = "ffFF7D0A";
+	elseif class == "unassigned"
+	then classColor = "ffff0000";
     end 
     return classColor;
 end
