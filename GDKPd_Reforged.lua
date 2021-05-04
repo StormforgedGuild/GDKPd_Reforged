@@ -651,12 +651,24 @@ status.BossLootTable:RegisterEvents({
 
 function status.BossLootTable:getInfofromSelection()
 	local loot_select = status.BossLootTable:GetSelection();
-    if (loot_select == nil) then
+	local pot_select = status.PotLogTable:GetSelection()
+	local potid = status.PotLogTable:GetCell(pot_select, 1)
+	local pot
+	local lootnum = status.BossLootTable:GetCell(loot_select, 1);
+	local link
+	if (loot_select == nil) then
         GDKPd_Debug("No loot selected");
         return;
     end
-    local lootnum = status.BossLootTable:GetCell(loot_select, 1);
-	local link = GDKPd_PotData.curPotHistory[lootnum]["item"]
+	if potid == 9999 then 
+		pot = GDKPd_PotData.curPotHistory
+		link = pot[lootnum]["item"]
+	else
+		pot = GDKPd_PotData["history"][potid]["items"]
+		link = pot[lootnum]["item"]
+	end 
+    --local link = GDKPd_PotData.curPotHistory[lootnum]["item"]
+	
 	local playerName = status.BossLootTable:GetCell(loot_select, 4);
 	local bid = status.BossLootTable:GetCell(loot_select, 5);
 	return link, lootnum, cleanString(playerName, true), bid
@@ -681,6 +693,9 @@ status.addLootToActivePot:SetScript("OnClick", function() GDKPd:addLootToActiveP
 
 function GDKPd:addLootToActivePot_click()
 	GDKPd_Debug("GDKPd:addLootToActivePot_click: Fired!")
+	local itemlink = status.BossLootTable:getInfofromSelection()
+	GDKPd:AddItemToPot(itemlink, 0, "unassigned", true)
+	GDKPd.status:Update()
 end
 
 --ADD LOOT BUTTON
@@ -722,7 +737,7 @@ StaticPopupDialogs["GDKPD_ADDLOOT"] = {
 
 
 function GDKPd:addLoot_click()
-	GDKPd_Debug("GDKPd:addLoot_click: Fired!")
+	--GDKPd_Debug("GDKPd:addLoot_click: Fired!")
 	StaticPopup_Show("GDKPD_ADDLOOT")
 end
 
