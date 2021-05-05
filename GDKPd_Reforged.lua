@@ -4858,7 +4858,14 @@ function status:Update()
 		GDKPd.status.removeLoot:Enable();
 		GDKPd.status.editLoot:Enable();
 		GDKPd.status.linkLoot:Enable();
-		GDKPd.status.bidLoot:Enable();
+		--if selected item is loot enable, else disable
+		local _, _, name = status.BossLootTable:getInfofromSelection()
+		--return link, lootnum, cleanString(playerName, true), bid
+		if name ~= "Raid" then 
+			GDKPd.status.bidLoot:Enable();
+		else
+			GDKPd.status.bidLoot:Disable();
+		end
 		GDKPd.status.tradeLoot:Enable();
 		GDKPd.status.addLootToActivePot:Enable();
 	else
