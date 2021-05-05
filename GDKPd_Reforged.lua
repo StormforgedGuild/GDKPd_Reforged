@@ -886,6 +886,7 @@ function GDKPd:bidLoot_click()
 	-- reset pot and distribution
 		status.removeLoot:removeSelectedLoot(true)
 	end
+	status.bidLoot:Disable()
 	GDKPd:DoAuction(link, lootnum)
     --LootAnnounce("RAID_WARNING", MRT_RaidLog[raidnum]["Loot"][lootnum]["ItemLink"], MRT_GUI_BossLootTable:GetCell(loot_select, 5))
 end
@@ -3146,6 +3147,7 @@ function GDKPd:FinishAuction(link)
 			tremove(self.auctionList,1)
 		end
 	end
+	status.bidLoot:Enable()
 end
 function GDKPd:DistributePot()
 	local numraid = GetNumGroupMembers()
