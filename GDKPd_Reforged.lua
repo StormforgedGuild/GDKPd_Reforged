@@ -136,7 +136,7 @@ StaticPopupDialogs["GDKPD_ADDTOPOT"] = {
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
-		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="Raid", index=GDKPd.itemCount, ltime=time()})
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="Raid", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
@@ -167,7 +167,7 @@ StaticPopupDialogs["GDKPD_REMFROMPOT"] = {
 		local name = ""
 		GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 		GDKPd.itemCount = GDKPd.itemCount + 1
-		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="Raid", index=GDKPd.itemCount, ltime=time()})
+		tinsert(GDKPd_PotData.curPotHistory, {itemName="Manual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name="Raid", index=GDKPd.itemCount, ltime=time()})
 		GDKPd.status:Update()
 	end,
 	timeout=0,
@@ -229,7 +229,7 @@ StaticPopupDialogs["GDKPD_ADDTOPLAYER"] = {
 			local name = ""
 			GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 			GDKPd.itemCount = GDKPd.itemCount + 1
-			tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name=data, index=GDKPd.itemCount, ltime=time()})
+			tinsert(GDKPd_PotData.curPotHistory, {itemName="Manual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name=data, index=GDKPd.itemCount, ltime=time()})
 		end
 		GDKPd.status:Update()
 	end,
@@ -265,7 +265,7 @@ StaticPopupDialogs["GDKPD_REMFROMPLAYER"] = {
 			local name = ""
 			GDKPd_Debug("AddAdjusttoPot: " ..tostring(bid1))
 			GDKPd.itemCount = GDKPd.itemCount + 1
-			tinsert(GDKPd_PotData.curPotHistory, {itemName="Manaual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name=data, index=GDKPd.itemCount, ltime=time()})
+			tinsert(GDKPd_PotData.curPotHistory, {itemName="Manual Adjustment", itemId=21100, itemColor="ffffffff", item="|cffffffff|Hitem:21100::::::::7:::::::|h[Coin of Ancestry]|h|r", bid=bid1, name=data, index=GDKPd.itemCount, ltime=time()})
 		end
 		GDKPd.status:Update()
 	end,
@@ -708,6 +708,11 @@ function status.BossLootTable:getInfofromSelection()
 	local pot_select = status.PotLogTable:GetSelection()
 	local potid = status.PotLogTable:GetCell(pot_select, 1)
 	local pot
+	if not (loot_select) then 
+		--if nothing is selected, return
+		GDKPd_Debug("getInfofromSelection: nothing is selected!") 
+		return
+	end
 	local lootnum = status.BossLootTable:GetCell(loot_select, 1);
 	local link
 	if (loot_select == nil) then
@@ -722,10 +727,11 @@ function status.BossLootTable:getInfofromSelection()
 		link = pot[lootnum]["item"]
 	end 
     --local link = GDKPd_PotData.curPotHistory[lootnum]["item"]
-	
-	local playerName = status.BossLootTable:GetCell(loot_select, 4);
-	local bid = status.BossLootTable:GetCell(loot_select, 5);
-	return link, lootnum, cleanString(playerName, true), bid
+	--BossLootTableData[index] = {i, v["itemId"], "|c"..v["itemColor"]..v["itemName"].."|r", "|cffff0000"..v["name"], v["bid"], v["item"], lootTime, doneState};
+	local playerName = status.BossLootTable:GetCell(loot_select, 4)
+	local bid = status.BossLootTable:GetCell(loot_select, 5)
+	local itemName = cleanString(status.BossLootTable:GetCell(loot_select, 3))
+	return link, lootnum, cleanString(playerName, true), bid, itemName
 end
 
 --BOSS LOOT FILTER
@@ -831,7 +837,8 @@ function status.removeLoot:removeSelectedLoot(reset)
 	if GDKPd.opt.linkBalancePot then
 		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-(tonumber(bid) or 0)
 	end
-
+	--GDKPd:BossLootTableUpdate()
+	status.BossLootTable:ClearSelection()
 	status:Update()
 end
 
@@ -4859,13 +4866,13 @@ function status:Update()
 		GDKPd.status.editLoot:Enable();
 		GDKPd.status.linkLoot:Enable();
 		--if selected item is loot enable, else disable
-		local _, _, name = status.BossLootTable:getInfofromSelection()
-		--return link, lootnum, cleanString(playerName, true), bid
-		if name ~= "Raid" then 
+		local _, _, _, _, name = status.BossLootTable:getInfofromSelection()
+		--return link, lootnum, cleanString(playerName, true), bid, itemName
+		if name ~= "Manual Adjustment" then 
 			GDKPd.status.bidLoot:Enable();
 		else
 			GDKPd.status.bidLoot:Disable();
-		end
+		end	
 		GDKPd.status.tradeLoot:Enable();
 		GDKPd.status.addLootToActivePot:Enable();
 	else
