@@ -818,14 +818,16 @@ function GDKPd:removeLoot_click()
 	end 
 end
 
-function status.removeLoot:removeSelectedLoot()
+function status.removeLoot:removeSelectedLoot(reset)
 	local link, lootnum, playerName, bid = status.BossLootTable:getInfofromSelection()
 	if playerName ~= "Raid" then 
 		GDKPd_PotData.playerBalance[playerName] = (GDKPd_PotData.playerBalance[playerName]+(tonumber(bid) or 0))
 		SendAddonMessage("GDKPD MANADJ",tostring(tonumber(bid) or 0),"WHISPER",playerName)
 		GDKPd.balance:Update()
 	end
-	tremove(GDKPd_PotData.curPotHistory, lootnum)
+	if not(reset) then 
+		tremove(GDKPd_PotData.curPotHistory, lootnum)
+	end
 	if GDKPd.opt.linkBalancePot then
 		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-(tonumber(bid) or 0)
 	end
@@ -878,7 +880,12 @@ function GDKPd:bidLoot_click()
     local lootnum = status.BossLootTable:GetCell(loot_select, 1);
 	local link = GDKPd_PotData.curPotHistory[lootnum]["item"] ]]
 	GDKPd_Debug("bidloot_click: staring auction")
-	local link, lootnum = status.BossLootTable:getInfofromSelection()
+	local link, lootnum, playerName, bid = status.BossLootTable:getInfofromSelection()
+	-- if the item has a bid then we need to reset the pot and distribution before doing the auction.
+	if (tonumber(bid) ~= 0) then 
+	-- reset pot and distribution
+		status.removeLoot:removeSelectedLoot(true)
+	end
 	GDKPd:DoAuction(link, lootnum)
     --LootAnnounce("RAID_WARNING", MRT_RaidLog[raidnum]["Loot"][lootnum]["ItemLink"], MRT_GUI_BossLootTable:GetCell(loot_select, 5))
 end
