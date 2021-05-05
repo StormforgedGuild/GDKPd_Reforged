@@ -1357,8 +1357,8 @@ local l = status:CreateLine()
 print(l)
 l:SetThickness(1)
 l:SetColorTexture(235,231,223,.5)
-l:SetStartPoint("TOPLEFT",20,-225)
-l:SetEndPoint("TOPLEFT",185,-225)
+l:SetStartPoint("TOPLEFT",20,-223)
+l:SetEndPoint("TOPLEFT",185,-223)
 
 --Insert 
 status.text = status:CreateFontString()
@@ -4804,8 +4804,10 @@ function status:Update()
 		GDKPd.status.tradeLoot:Show();
 		GDKPd.status.addLootToActivePot:Hide();
 		GDKPd.status.exportButton:Hide();
+		GDKPd.status.insertPlayerBalance:Enable();
 		GDKPd.status.addPotValueButton:Enable();
 		GDKPd.status.removePotValueButton:Enable();
+		GDKPd.status.resetPlayerBalance:Enable();
 		GDKPd.status.distribute:Enable();
 		GDKPd.status.removePot:Disable();
 	else
@@ -4815,11 +4817,13 @@ function status:Update()
 		GDKPd.status.linkLoot:Hide();
 		GDKPd.status.bidLoot:Hide();
 		GDKPd.status.tradeLoot:Hide();
+		GDKPd.status.insertPlayerBalance:Disable();
 		GDKPd.status.addLootToActivePot:Show();
 		GDKPd.status.exportButton:Show();
 		GDKPd.status.addPotValueButton:Disable();
 		GDKPd.status.removePotValueButton:Disable();
 		GDKPd.status.distribute:Disable();
+		GDKPd.status.resetPlayerBalance:Disable();
 		GDKPd.status.removePot:Enable();
 	end
 
@@ -4830,12 +4834,14 @@ function status:Update()
 		GDKPd.status.linkLoot:Enable();
 		GDKPd.status.bidLoot:Enable();
 		GDKPd.status.tradeLoot:Enable();
+		GDKPd.status.addLootToActivePot:Enable();
 	else
 		GDKPd.status.removeLoot:Disable();
 		GDKPd.status.editLoot:Disable();
 		GDKPd.status.linkLoot:Disable();
 		GDKPd.status.bidLoot:Disable();
 		GDKPd.status.tradeLoot:Disable();
+		GDKPd.status.addLootToActivePot:Disable();
 	end
 
 	--Enable/Disable Buttons depending on whether player  is selected or not
