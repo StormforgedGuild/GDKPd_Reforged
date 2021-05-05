@@ -555,12 +555,13 @@ end
 --HEADER
 status.header = CreateFrame("Button", nil, status)
 status.header:SetNormalTexture("Interface\\DialogFrame\\UI-DialogBox-Gold-Header")
-status.header:SetSize(180,50)
+status.header:SetSize(260,50)
+status.header:SetHitRectInsets(0, 0, 0, 10);
 status.header.text = status.header:CreateFontString()
 status.header.text:SetPoint("TOP",0,-9)
 status.header.text:SetFont("Fonts\\FRIZQT__.TTF", 14, "")
 status.header.text:SetTextColor(1,1,1)
-status.header.text:SetText("GDKPd")
+status.header.text:SetText("GDKP Reforged")
 status.header:SetMovable(true)
 status.header:SetScript("OnMouseDown", function(self)
 	self:StartMoving()
@@ -569,7 +570,7 @@ status.header:SetScript("OnMouseUp", function(self)
 	self:StopMovingOrSizing()
 	GDKPd.opt.statuspoint.point, _, GDKPd.opt.statuspoint.relative, GDKPd.opt.statuspoint.x, GDKPd.opt.statuspoint.y = self:GetPoint()
 end)
-status:SetPoint("TOP", status.header, "TOP", 0, -6)
+status:SetPoint("TOP", status.header, "TOP", 0, -9)
 status:SetScript("OnShow", function(self)
 	self:UpdateSize()
 end)
@@ -4782,8 +4783,8 @@ function status:Update()
 		lastDist = (GDKPd_PotData.prevDist or 0)
 	else
 		--GDKPd_Debug("Non-active pot selected")
-		potAmount = 55
-		lastDist = 44
+		potAmount = 0
+		lastDist = 0
 	end
 	if lastDist > 0 then
 		status.potText:SetText(("Pot: %d|cffffd100g|r"):format(potAmount))
