@@ -414,6 +414,38 @@ StaticPopupDialogs["GDKPD_42_ADDONMSG"]={
 	hideOnEscape=false,
 	timeout=0,
 }
+
+StaticPopupDialogs["GDKPD_ADDLOOT"] = {
+	text="Shift-click an item to add:",
+	button1=ADD,
+	button2=CANCEL,
+	hasEditBox=true,
+	OnShow=function(self)
+		self.button1:Disable()
+		--need the following to enable itemlinks
+		if not GDKPd.AddlootPopShown then 
+			--GDKPd_Debug("First time open, set hooksecurefunc:  you should only see this once.")
+			hooksecurefunc("ChatEdit_InsertLink", function (link) if self.editBox:IsVisible() and self.editBox:HasFocus() then self.editBox:Insert(link); return true; end end)		
+		end
+	end,
+	EditBoxOnEnterPressed=function(self) self:GetParent().button1:Click() end,
+	EditBoxOnTextChanged = function(self)
+		if strlen(self:GetText()) > 0 then
+			self:GetParent().button1:Enable()
+		else
+			self:GetParent().button1:Disable()
+		end
+	end,
+	OnAccept=function(self, data)
+	    --GDKPd_PotData.playerBalance[self.editBox:GetText()] = GDKPd_PotData.playerBalance[self.editBox:GetText()] or 0
+		GDKPd:AddItemToPot(self.editBox:GetText(), 0, "unassigned", true)
+		GDKPd.status:Update()
+	end,
+	timeout=0,
+	whileDead=true,
+}
+
+
 local function round(num, places)
 	return tonumber(string.format("%."..(places or 0).."f",num))
 end
@@ -439,6 +471,7 @@ GDKPd.ignoredLinks = {}
 GDKPd.versions = {}
 GDKPd.itemCount = 0 -- # of loot drop, also index of loot that dropped.
 GDKPd.itemNew = true --flag for auction if new, add to curPotHistory, if false, search to modify.
+GDKPd.AddlootPopShown = false
 GDKPd:Hide()
 
 --Tooltip utility functions
@@ -539,6 +572,7 @@ status:SetBackdrop({
 		left=6,
 	},
 })
+
 function status:UpdateVisibility(forceCombat)
 	
 --	if GDKPd.opt.hide then
@@ -742,37 +776,16 @@ status.addLoot:SetFontString(status.addLootFont)
 status.addLoot:SetPoint("LEFT", status.lootFilter, "RIGHT", 3, 0 );
 status.addLoot:SetScript("OnClick", function() GDKPd:addLoot_click(); end);
 
-StaticPopupDialogs["GDKPD_ADDLOOT"] = {
-	text="Shift-click an item to add:",
-	button1=ADD,
-	button2=CANCEL,
-	hasEditBox=true,
-	OnShow=function(self)
-		self.button1:Disable()
-		--need the following to enable itemlinks
-		hooksecurefunc("ChatEdit_InsertLink", function (link) if self.editBox:IsVisible() and self.editBox:HasFocus() then self.editBox:Insert(link); return true; end end)		
-	end,
-	EditBoxOnEnterPressed=function(self) self:GetParent().button1:Click() end,
-	EditBoxOnTextChanged = function(self)
-		if strlen(self:GetText()) > 0 then
-			self:GetParent().button1:Enable()
-		else
-			self:GetParent().button1:Disable()
-		end
-	end,
-	OnAccept=function(self, data)
-	    --GDKPd_PotData.playerBalance[self.editBox:GetText()] = GDKPd_PotData.playerBalance[self.editBox:GetText()] or 0
-		GDKPd:AddItemToPot(self.editBox:GetText(), 0, "unassigned", true)
-		GDKPd.status:Update()
-	end,
-	timeout=0,
-	whileDead=true,
-}
+
 
 
 function GDKPd:addLoot_click()
 	--GDKPd_Debug("GDKPd:addLoot_click: Fired!")
 	StaticPopup_Show("GDKPD_ADDLOOT")
+	if not GDKPd.AddlootPopShown then 
+		--GDKPd_Debug("GDKPd:addLoot_click(): First time fired.  Setting addlootpopshow to true")
+		GDKPd.AddlootPopShown = true
+	end
 end
 
 --REMOVE LOOT BUTTON
@@ -864,6 +877,7 @@ function GDKPd:bidLoot_click()
     end
     local lootnum = status.BossLootTable:GetCell(loot_select, 1);
 	local link = GDKPd_PotData.curPotHistory[lootnum]["item"] ]]
+	GDKPd_Debug("bidloot_click: staring auction")
 	local link, lootnum = status.BossLootTable:getInfofromSelection()
 	GDKPd:DoAuction(link, lootnum)
     --LootAnnounce("RAID_WARNING", MRT_RaidLog[raidnum]["Loot"][lootnum]["ItemLink"], MRT_GUI_BossLootTable:GetCell(loot_select, 5))
@@ -2989,6 +3003,7 @@ function GDKPd:DoAuction(link, index)
 	if self:PlayerIsML((UnitName("player")),true) then
 		for itemLink in string.gmatch(link, "|c........|Hitem:.-|r") do
 			local itemID = tonumber(itemLink:match("|Hitem:(%d+):"))
+			GDKPd_Debug("DoAuction: about to queue an auction")
 			self:QueueAuction(itemLink, GDKPd:GetStartBid(itemID), GDKPd:GetMinIncrement(itemID), index)
 		end
 	else
@@ -3028,7 +3043,7 @@ function GDKPd:FinishAuction(link)
 				--This is where we'll want to find and update instead of adding new item.
 				GDKPd_Debug("FinishAuction: link: "..link.." bid: " ..totalAmount.. " aucdata.bidders[1].bidderName: " ..aucdata.bidders[1].bidderName)
 				--self:AddItemToPot(link, totalAmount, aucdata.bidders[1].bidderName)
-				self:UpdateItemInPot(link, totalAmount, aucdata.bidders[1].bidderName, self.curAuction.index)
+				GDKPd:UpdateItemInPot(link, totalAmount, aucdata.bidders[1].bidderName, self.curAuction.index)
 				--tinsert(GDKPd_PotData.curPotHistory, {item=link, bid=totalAmount, name=aucdata.bidders[1].bidderName})
 				self.status:Update()
 				if self.opt.autoAwardLoot then
@@ -3051,7 +3066,9 @@ function GDKPd:FinishAuction(link)
 				end
 			else
 				SendChatMessage(("Auction finished for %s. No bids recieved."):format(link),"RAID")
-				self:UpdateItemInPot(link, 0, "unassigned", self.curAuction.index)
+				GDKPd_Debug("FinishAuction: about to updateIteminPot")
+				GDKPd_Debug("FinishAuction: link: "..link.." bid: 0 bidder: unassigned self.curAuction.index: " ..self.curAuction.index)
+				GDKPd:UpdateItemInPot(link, 0, "unassigned", self.curAuction.index)
 			end
 			aucdata:Release()
 		end
@@ -4481,14 +4498,14 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 		local bid = 0
 		if not itemsToTrade then 
 			--nothing to trade
-			GDKPd_Debug("TRADE_MONEY_CHANGED: nothing to trade")
+			--GDKPd_Debug("TRADE_MONEY_CHANGED: nothing to trade")
 			return;
 		else
 			for i,v in pairs(itemBids) do
-				GDKPd_Debug("TRADE_MONEY_CHANGED: itemBids: " ..tostring(v))
+				--GDKPd_Debug("TRADE_MONEY_CHANGED: itemBids: " ..tostring(v))
 				bid = bid + tonumber(v)
 			end 
-			GDKPd_Debug("TRADE_MONEY_CHANGED: bid: " ..tostring(bid))
+			--GDKPd_Debug("TRADE_MONEY_CHANGED: bid: " ..tostring(bid))
 			if self.tradeMoneyOther ==  bid then 
 				GDKPd:TradeItems()
 				GDKPd:TradeItems()
@@ -4547,7 +4564,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 	if (event == "CHAT_MSG_LOOT") then
         if GDKPd.opt.autoLootTracking then 
 			chatmsg = arg[1]
-			GDKPd_Debug("Loot event received. Processing...");
+			--GDKPd_Debug("Loot event received. Processing...");
 			-- patterns LOOT_ITEM / LOOT_ITEM_SELF are also valid for LOOT_ITEM_MULTIPLE / LOOT_ITEM_SELF_MULTIPLE - but not the other way around - try these first
 			-- first try: somebody else received multiple loot (most parameters)
 			local playerName, itemLink, itemCount = deformat(chatmsg, LOOT_ITEM_MULTIPLE);
@@ -4573,16 +4590,16 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			end
 			-- if code reaches this point, we should have a valid looter and a valid itemLink
 			-- SF: hack to assign to disenchanted playerName = "disenchanted";
-			GDKPd_Debug("Item looted - Looter is "..playerName.." and loot is "..itemLink);
+			--GDKPd_Debug("Item looted - Looter is "..playerName.." and loot is "..itemLink);
 			--cache the item
 			local itemName, _, itemId, itemString, itemRarity, itemColor, itemLevel, _, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID = GDKPd:GetDetailedItemInformation(itemLink);
 			--if itemRarity is green (2) or better add
 			--if 1 < itemRarity then 
-			GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName.. " itemRarity: " ..itemRarity.. " GDKPd.opt.minQualityTracking: " ..GDKPd.opt.minQualityTracking)
+			--GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName.. " itemRarity: " ..itemRarity.. " GDKPd.opt.minQualityTracking: " ..GDKPd.opt.minQualityTracking)
 			if GDKPd.opt.minQualityTracking <= itemRarity then 
 				self:AddItemToPot(itemLink, 0, playerName)
 			else
-				GDKPd_Debug("Item Rarity is too low to track")
+				--GDKPd_Debug("Item Rarity is too low to track")
 			end
 		end
 	end
@@ -4976,7 +4993,7 @@ function GDKPd:BossLootTableUpdate(skipsort, filter)
 		GDKPd_Debug("BossLootTableData: no history")
 		return
 	else
-		GDKPd_Debug("BossLootTableUpdate: potID: " ..potID)
+		--GDKPd_Debug("BossLootTableUpdate: potID: " ..potID)
 		curPot = GDKPd_PotData["history"][potID]["items"]
 	end 
 
