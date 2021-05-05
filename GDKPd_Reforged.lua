@@ -428,6 +428,7 @@ end
 local function pruneCrossRealm(name) -- only use for people in the raid group!
 	return GetUnitName(name,true) or localNameOnly(name)
 end
+
 GDKPd = CreateFrame("Frame")
 local GDKPd = GDKPd
 GDKPd.frames = {}
@@ -439,6 +440,24 @@ GDKPd.versions = {}
 GDKPd.itemCount = 0 -- # of loot drop, also index of loot that dropped.
 GDKPd.itemNew = true --flag for auction if new, add to curPotHistory, if false, search to modify.
 GDKPd:Hide()
+
+--Tooltip utility functions
+function GDKPd:ttRegister(ttFrame, ttText)
+	ttFrame:SetScript("OnEnter", function(self)GDKPd:ttShow(self, ttText) end)
+	ttFrame:SetScript("OnLeave", function(self) GameTooltip:Hide() end)
+end
+
+function GDKPd:ttShow(ttFrame, ttText)
+    GameTooltip:SetOwner(ttFrame, "ANCHOR_RIGHT")
+    GameTooltip:ClearLines()
+    GameTooltip:AddLine(ttText)
+    GameTooltip:Show()
+end
+
+function GDKPd:ttHide()
+    GameTooltip:Hide()
+end
+
 GDKPd:SetScript("OnUpdate", function(self, elapsed)
 	if (not self.curAuction.item) and (not next(self.curAuctions)) then self:Hide() return end
 	if not self.opt.allowMultipleAuctions then
@@ -681,6 +700,19 @@ status.lootFilter:SetAutoFocus(false) -- dont automatically focus
 status.lootFilter:SetFontObject("ChatFontNormal")
 status.lootFilter:SetPoint("TOP", status.BossLootTable.frame, "TOPLEFT", 60, 52);
 
+--Export Loot
+status.exportButton= CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.exportButton:SetSize(70, 22)
+status.exportButtonFont = status.exportButton:CreateFontString()
+status.exportButtonFont:SetFont("Fonts/FRIZQT__.TTF",12)
+status.exportButtonFont:SetText("Export")
+status.exportButton:SetFontString(status.exportButtonFont)
+status.exportButton:SetPoint("LEFT", status.lootFilter, "RIGHT", 3, 0 );
+status.exportButton:SetScript("OnMouseDown", function(self)
+--	GDKPd.exportframe:Show()
+--	GDKPd.exportframe:Set(output,data.items)
+end)
+
 --ADD LOOT TO Active POT from History BUTTON
 status.addLootToActivePot= CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.addLootToActivePot:SetSize(125, 22)
@@ -688,7 +720,7 @@ status.addLoottoActiveFont = status.addLootToActivePot:CreateFontString()
 status.addLoottoActiveFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.addLoottoActiveFont:SetText("Add to Active Pot")
 status.addLootToActivePot:SetFontString(status.addLoottoActiveFont)
-status.addLootToActivePot:SetPoint("LEFT", status.lootFilter, "RIGHT", 3, 0 );
+status.addLootToActivePot:SetPoint("LEFT", status.exportButton, "RIGHT", 0, 0 );
 status.addLootToActivePot:SetScript("OnClick", function() GDKPd:addLootToActivePot_click(); end);
 
 function GDKPd:addLootToActivePot_click()
@@ -704,6 +736,7 @@ status.addLoot:SetSize(22, 22)
 status.addLootFont = status.addLoot:CreateFontString()
 status.addLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addLootFont:SetText("+")
+GDKPd:ttRegister(status.addLoot, "Add a new item into the loot list")
 status.addLoot:SetFontString(status.addLootFont)
 status.addLoot:SetPoint("LEFT", status.lootFilter, "RIGHT", 3, 0 );
 status.addLoot:SetScript("OnClick", function() GDKPd:addLoot_click(); end);
@@ -747,6 +780,7 @@ status.removeLoot:SetSize(22, 22)
 status.removeLootFont = status.removeLoot:CreateFontString()
 status.removeLootFont:SetFont("Fonts/FRIZQT__.TTF",14)
 status.removeLootFont:SetText("-")
+GDKPd:ttRegister(status.removeLoot, "Remove the selected item, including any gold from the pot")
 status.removeLoot:SetFontString(status.removeLootFont)
 status.removeLoot:SetPoint("LEFT", status.addLoot, "RIGHT", 3, 0 );
 status.removeLoot:SetScript("OnClick", function() GDKPd:removeLoot_click(); end);
@@ -792,6 +826,7 @@ status.editLoot:SetSize(50, 22)
 status.editLootFont = status.editLoot:CreateFontString()
 status.editLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.editLootFont:SetText("Edit")
+GDKPd:ttRegister(status.editLoot, "Edit the selected item")
 status.editLoot:SetFontString(status.editLootFont)
 status.editLoot:SetPoint("LEFT", status.removeLoot, "RIGHT", 3, 0 );
 
@@ -801,6 +836,7 @@ status.linkLoot:SetSize(50, 22)
 status.linkLootFont = status.linkLoot:CreateFontString()
 status.linkLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.linkLootFont:SetText("Link")
+GDKPd:ttRegister(status.linkLoot, "Link the selected item in raid chat")
 status.linkLoot:SetFontString(status.linkLootFont)
 status.linkLoot:SetPoint("LEFT", status.editLoot, "RIGHT", 3, 0 );
 
@@ -810,6 +846,7 @@ status.bidLoot:SetSize(50, 22)
 status.bidLootFont = status.bidLoot:CreateFontString()
 status.bidLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.bidLootFont:SetText("Bid")
+GDKPd:ttRegister(status.bidLoot, "Post the selected item in raid chat for bidding")
 status.bidLoot:SetFontString(status.bidLootFont)
 status.bidLoot:SetPoint("LEFT", status.linkLoot, "RIGHT", 3, 0 );
 status.bidLoot:SetScript("OnClick", function() GDKPd:bidLoot_click(); end);
@@ -837,6 +874,7 @@ status.tradeLoot:SetSize(50, 22)
 status.tradeLootFont = status.tradeLoot:CreateFontString()
 status.tradeLootFont:SetFont("Fonts/FRIZQT__.TTF",12)
 status.tradeLootFont:SetText("Trade")
+GDKPd:ttRegister(status.tradeLoot, "Trade the selected item to the winner")
 status.tradeLoot:SetFontString(status.tradeLootFont)
 status.tradeLoot:SetPoint("LEFT", status.bidLoot, "RIGHT", 3, 0 );
 status.tradeLoot:SetScript("OnClick", function() GDKPd:tradeLoot_click(); end);
@@ -1174,6 +1212,7 @@ status.reset = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.reset:SetSize(75, 22)
 status.reset:SetPoint("LEFT", status, "TOPLEFT", 15, -30)
 status.reset:SetText("New Pot")
+GDKPd:ttRegister(status.reset, "Create an empty pot")
 status.reset:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_RESETPOT")
 end)
@@ -1183,6 +1222,7 @@ status.removePot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.removePot:SetSize(22, 22)
 status.removePot:SetPoint("LEFT", status.reset, "RIGHT")
 status.removePot:SetText("-")
+GDKPd:ttRegister(status.removePot, "Delete the selected Pot")
 status.removePot:SetScript("OnClick", function(self)
 --	StaticPopup_Show("GDKPD_RESETPOT")
 end)
@@ -1192,6 +1232,7 @@ status.rules = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.rules:SetSize(75, 22)
 status.rules:SetPoint("LEFT", status.removePot, "RIGHT", 0, 0)
 status.rules:SetText("Post rules")
+GDKPd:ttRegister(status.rules, "Post the rules to raid chat")
 status.rules:SetScript("OnClick",function()
 	local announceStrings = emptytable("")
 	for line in string.gmatch(GDKPd.opt.rulesString,"[^\n]+") do
@@ -1262,6 +1303,7 @@ status.addPotValueButton:SetPoint("TOPLEFT", status.PotLogTable.frame, "BOTTOMLE
 status.addPotValueLabel = status.addLoot:CreateFontString()
 status.addPotValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addPotValueLabel:SetText("+")
+GDKPd:ttRegister(status.addPotValueButton, "Add gold to the pot")
 status.addPotValueButton:SetFontString(status.addPotValueLabel)
 status.addPotValueButton:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_ADDTOPOT")
@@ -1273,6 +1315,7 @@ status.removePotValueButton:SetPoint("LEFT", status.addPotValueButton, "RIGHT")
 status.removePotValueLabel = status.addLoot:CreateFontString()
 status.removePotValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
 status.removePotValueLabel:SetText("-")
+GDKPd:ttRegister(status.removePotValueButton, "Remove gold from the pot")
 status.removePotValueButton:SetFontString(status.removePotValueLabel)
 status.removePotValueButton:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_REMFROMPOT")
@@ -1287,6 +1330,7 @@ status.distribute = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.distribute:SetSize(75, 22)
 status.distribute:SetPoint("TOPLEFT", status, "BOTTOMLEFT", 15, 290)
 status.distribute:SetText("Distribute")
+GDKPd:ttRegister(status.distribute, "Distribute the pot to the current raid members")
 status.distribute:SetScript("OnClick", function(self)
 	GDKPd:DistributePot()
 	status:Update()
@@ -1301,6 +1345,7 @@ status.resetPlayerBalance = CreateFrame("Button", nil, status, "UIPanelButtonTem
 status.resetPlayerBalance:SetSize(52, 22)
 status.resetPlayerBalance:SetPoint("LEFT", status.distribute, "RIGHT", 0, 0)
 status.resetPlayerBalance:SetText("Reset")
+GDKPd:ttRegister(status.resetPlayerBalance, "Put the distributed gold back into the pot")
 status.resetPlayerBalance:SetScript("OnClick", function(self)
 	GDKPd.ResetDisribution()
 	status.Update()
@@ -1320,23 +1365,52 @@ status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
 status.text:SetTextColor(1,1,1)
 status.text:SetJustifyH("LEFT")
 status.insertPlayerBalance = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
-status.insertPlayerBalance:SetSize(52, 22)
-status.insertPlayerBalance:SetPoint("TOP", status.distribute, "BOTTOMLEFT", 25, -10)
-status.insertPlayerBalance:SetText("Insert")
+status.insertPlayerBalance:SetSize(40, 22)
+status.insertPlayerBalance:SetPoint("TOP", status.distribute, "BOTTOMLEFT", 20, -10)
+status.insertPlayerBalance:SetText("Add")
+GDKPd:ttRegister(status.insertPlayerBalance, "Add a new player to the distribution list")
 status.insertPlayerBalance:SetScript("OnClick", function(self)
 	StaticPopup_Show("GDKPD_INSERTPLAYER");	
+end)
+
+--Trade 
+status.text = status:CreateFontString()
+status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.text:SetTextColor(1,1,1)
+status.text:SetJustifyH("LEFT")
+status.tradeButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.tradeButton:SetSize(45, 22)
+status.tradeButton:SetPoint("LEFT", status.insertPlayerBalance, "RIGHT", 0, 0)
+status.tradeButton:SetText("Trade")
+GDKPd:ttRegister(status.tradeButton, "Trade the selected person their cut")
+status.tradeButton:SetScript("OnClick", function(self)
+	--
+end)
+
+--Mail 
+status.text = status:CreateFontString()
+status.text:SetFont("Fonts\\FRIZQT__.TTF", 12, "")
+status.text:SetTextColor(1,1,1)
+status.text:SetJustifyH("LEFT")
+status.mailButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
+status.mailButton:SetSize(40, 22)
+status.mailButton:SetPoint("LEFT", status.tradeButton, "RIGHT", 0, 0)
+status.mailButton:SetText("Mail")
+GDKPd:ttRegister(status.mailButton, "Mail the selected person their cut")
+status.mailButton:SetScript("OnClick", function(self)
+	--
 end)
 
 -- ADD/ REMOVE GOLD FROM PLAYERS
 status.addPlayerValueButton = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
 status.addPlayerValueButton:SetSize(22,22)
-status.addPlayerValueButton:SetPoint("LEFT", status.insertPlayerBalance, "RIGHT", 77, 0)
+status.addPlayerValueButton:SetPoint("LEFT", status.insertPlayerBalance, "RIGHT", 87, 0)
 status.addPlayerValueLabel = status.addLoot:CreateFontString()
 status.addPlayerValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
 status.addPlayerValueLabel:SetText("+")
+GDKPd:ttRegister(status.addPlayerValueButton, "Add gold to the selected person")
 status.addPlayerValueButton:SetFontString(status.addPlayerValueLabel)
 status.addPlayerValueButton:SetScript("OnClick", function(self)
-
 	local playerID = status.PlayerBalanceTable:GetSelection();
 	local playerName = status.PlayerBalanceTable:GetCell(playerID, 2);
 	StaticPopup_Show("GDKPD_ADDTOPLAYER", playerName).data=GDKPd:removeClassColor(playerName)
@@ -1348,6 +1422,7 @@ status.removePlayerValueButton:SetPoint("LEFT", status.addPlayerValueButton, "RI
 status.removePlayerValueLabel = status.addLoot:CreateFontString()
 status.removePlayerValueLabel:SetFont("Fonts/FRIZQT__.TTF",14)
 status.removePlayerValueLabel:SetText("-")
+GDKPd:ttRegister(status.removePlayerValueButton, "Remove gold from the selected person")
 status.removePlayerValueButton:SetFontString(status.removePlayerValueLabel)
 status.removePlayerValueButton:SetScript("OnClick", function(self)
 	local playerID = status.PlayerBalanceTable:GetSelection();
@@ -4727,6 +4802,7 @@ function status:Update()
 		GDKPd.status.bidLoot:Show();
 		GDKPd.status.tradeLoot:Show();
 		GDKPd.status.addLootToActivePot:Hide();
+		GDKPd.status.exportButton:Hide();
 		GDKPd.status.addPotValueButton:Enable();
 		GDKPd.status.removePotValueButton:Enable();
 		GDKPd.status.distribute:Enable();
@@ -4739,6 +4815,7 @@ function status:Update()
 		GDKPd.status.bidLoot:Hide();
 		GDKPd.status.tradeLoot:Hide();
 		GDKPd.status.addLootToActivePot:Show();
+		GDKPd.status.exportButton:Show();
 		GDKPd.status.addPotValueButton:Disable();
 		GDKPd.status.removePotValueButton:Disable();
 		GDKPd.status.distribute:Disable();
@@ -4765,13 +4842,19 @@ function status:Update()
 		if status.PlayerBalanceTable:GetSelection() then
 			GDKPd.status.addPlayerValueButton:Enable();
 			GDKPd.status.removePlayerValueButton:Enable();
+			GDKPd.status.tradeButton:Enable();
+			GDKPd.status.mailButton:Enable();
 		else
 			GDKPd.status.addPlayerValueButton:Disable();
 			GDKPd.status.removePlayerValueButton:Disable();
+			GDKPd.status.tradeButton:Disable();
+			GDKPd.status.mailButton:Disable();
 		end
 	else
 		GDKPd.status.addPlayerValueButton:Disable();
 		GDKPd.status.removePlayerValueButton:Disable();
+		GDKPd.status.tradeButton:Disable();
+		GDKPd.status.mailButton:Disable();
 	end
 end
 
