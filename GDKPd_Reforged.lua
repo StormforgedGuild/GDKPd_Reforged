@@ -1414,7 +1414,19 @@ status.tradeButton:SetPoint("LEFT", status.insertPlayerBalance, "RIGHT", 0, 0)
 status.tradeButton:SetText("Trade")
 GDKPd:ttRegister(status.tradeButton, "Trade the selected person their cut")
 status.tradeButton:SetScript("OnClick", function(self)
-	--
+	--GDKPd_Debug("status.tradebutton")
+	local loot_select = status.PlayerBalanceTable:GetSelection();
+	if not (loot_select) then 
+		--if nothing is selected, return
+		GDKPd_Debug("tradeButton: noone is selected in distribution table!") 
+		return
+	end
+	local distName = status.PlayerBalanceTable:GetCell(loot_select, 2);
+	-- {intCount, "|c"..classColor..i, "|cff9d8e8d"..v};
+	local PName = cleanString(distName,true)
+	if (PName ~= -1) then
+		GDKPd:doFollowTrade(PName)
+	end
 end)
 
 --Mail 
