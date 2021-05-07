@@ -698,7 +698,9 @@ status.BossLootTable:EnableSelection(true);
 status.BossLootTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
 	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
-    	status:Update();
+    	--status:Update();
+		GDKPd:UpdateLootButtons()
+		GDKPd:UpdateLootButtonsForLoot()
 		return true
 	end,
 })
@@ -1300,7 +1302,10 @@ status.PotLogTable:EnableSelection(true);
 status.PotLogTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
 	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
-    	status:Update();
+    	--status:Update();
+		GDKPd:BossLootTableUpdate()
+		GDKPd:UpdateLootButtons()
+		GDKPd:PlayerBalanceTableUpdate()
 		return true
 	end,
 })
@@ -4840,6 +4845,35 @@ function status:Update()
 	end
 
 	--Enable/Disable Buttons depending on whether active raid is selected or not
+	
+	-- Update Lootbuttons
+	GDKPd:UpdateLootButtons()
+	
+	--Enable/Disable Buttons depending on whether loot item is selected or not
+	GDKPd:UpdateLootButtonsForLoot()
+	
+	--Enable/Disable Buttons depending on whether player  is selected or not
+	if GDKPd:IsActivePotSelected() then
+		if status.PlayerBalanceTable:GetSelection() then
+			GDKPd.status.addPlayerValueButton:Enable();
+			GDKPd.status.removePlayerValueButton:Enable();
+			GDKPd.status.tradeButton:Enable();
+			GDKPd.status.mailButton:Enable();
+		else
+			GDKPd.status.addPlayerValueButton:Disable();
+			GDKPd.status.removePlayerValueButton:Disable();
+			GDKPd.status.tradeButton:Disable();
+			GDKPd.status.mailButton:Disable();
+		end
+	else
+		GDKPd.status.addPlayerValueButton:Disable();
+		GDKPd.status.removePlayerValueButton:Disable();
+		GDKPd.status.tradeButton:Disable();
+		GDKPd.status.mailButton:Disable();
+	end
+end
+
+function GDKPd:UpdateLootButtons()
 	if GDKPd:IsActivePotSelected() then
 		GDKPd.status.removeLoot:Show();
 		GDKPd.status.addLoot:Show();
@@ -4871,8 +4905,11 @@ function status:Update()
 		GDKPd.status.resetPlayerBalance:Disable();
 		GDKPd.status.removePot:Enable();
 	end
+	
+end
 
-	--Enable/Disable Buttons depending on whether loot item is selected or not
+function GDKPd:UpdateLootButtonsForLoot()
+	
 	if status.BossLootTable:GetSelection() then
 		GDKPd.status.removeLoot:Enable();
 		GDKPd.status.editLoot:Enable();
@@ -4895,28 +4932,7 @@ function status:Update()
 		GDKPd.status.tradeLoot:Disable();
 		GDKPd.status.addLootToActivePot:Disable();
 	end
-
-	--Enable/Disable Buttons depending on whether player  is selected or not
-	if GDKPd:IsActivePotSelected() then
-		if status.PlayerBalanceTable:GetSelection() then
-			GDKPd.status.addPlayerValueButton:Enable();
-			GDKPd.status.removePlayerValueButton:Enable();
-			GDKPd.status.tradeButton:Enable();
-			GDKPd.status.mailButton:Enable();
-		else
-			GDKPd.status.addPlayerValueButton:Disable();
-			GDKPd.status.removePlayerValueButton:Disable();
-			GDKPd.status.tradeButton:Disable();
-			GDKPd.status.mailButton:Disable();
-		end
-	else
-		GDKPd.status.addPlayerValueButton:Disable();
-		GDKPd.status.removePlayerValueButton:Disable();
-		GDKPd.status.tradeButton:Disable();
-		GDKPd.status.mailButton:Disable();
-	end
 end
-
 ---------------------
 -- IsActivePotSelected--
 ---------------------
