@@ -4638,7 +4638,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 	end
 	if (event == "BAG_UPDATE") then
         if status.TradeInitiated then 
-            local freeSlotsNow = GetBagFreeSlots();
+			local freeSlotsNow = GetBagFreeSlots();
             GDKPd_Debug("Bag_Update: freeSlotsNow: " ..tostring(freeSlotsNow));
             GDKPd_Debug("Bag_Update: MRT_BagFreeSlots: " ..tostring(status.BagFreeSlots));
             if freeSlotsNow > status.BagFreeSlots then
@@ -4647,8 +4647,8 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
                 GDKPd:MarkAsTraded();
             end
             status.TradeInitiated = false;
+			status:Update();
         end
-        status:Update();
 	end
 	-- release table back into the pool of usable tables
 	arg:Release()
