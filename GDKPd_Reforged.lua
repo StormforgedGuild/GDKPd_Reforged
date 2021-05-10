@@ -697,7 +697,7 @@ status.BossLootTable.frame:SetPoint("TOPLEFT", status, "TOPLEFT", 200, -80);
 status.BossLootTable:EnableSelection(true);
 status.BossLootTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
-	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
+	    ST2_doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
     	--status:Update();
 		GDKPd:UpdateLootButtons()
 		GDKPd:UpdateLootButtonsForLoot()
@@ -835,12 +835,12 @@ function status.removeLoot:removeSelectedLoot(reset)
 	end
 	if not(reset) then 
 		tremove(GDKPd_PotData.curPotHistory, lootnum)
+		status.BossLootTable:ClearSelection()
 	end
 	if GDKPd.opt.linkBalancePot then
 		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-(tonumber(bid) or 0)
 	end
 	--GDKPd:BossLootTableUpdate()
-	status.BossLootTable:ClearSelection()
 	status:Update()
 end
 
@@ -1301,7 +1301,7 @@ status.PotLogTable.frame:SetPoint("TOPLEFT", status.reset, "TOPLEFT", 0, -45);
 status.PotLogTable:EnableSelection(true);
 status.PotLogTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
-	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
+	    ST2_doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
     	--status:Update();
 		GDKPd:BossLootTableUpdate()
 		GDKPd:UpdateLootButtons()
@@ -1490,7 +1490,7 @@ status.PlayerBalanceTable.frame:SetPoint("TOPLEFT", status.insertPlayerBalance, 
 status.PlayerBalanceTable:EnableSelection(true);
 status.PlayerBalanceTable:RegisterEvents({
 	["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)
-	    doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
+	    ST2_doOnClick(rowFrame, cellFrame, data, cols, row, realrow, coloumn, scrollingTable, button, ...)  
     	status:Update();
 		return true
 	end,
@@ -3100,7 +3100,7 @@ function GDKPd:FinishAuction(link)
 				SendChatMessage(("Auction finished for %s. No bids recieved."):format(link),"RAID")
 				GDKPd_Debug("FinishAuction: about to updateIteminPot")
 				GDKPd_Debug("FinishAuction: link: "..link.." bid: 0 bidder: unassigned self.curAuction.index: " ..self.curAuction.index)
-				GDKPd:UpdateItemInPot(link, 0, "unassigned", self.curAuction.index)
+				GDKPd:UpdateItemInPot(link, 0, "disenchant", self.curAuction.index)
 			end
 			aucdata:Release()
 		end
@@ -3161,7 +3161,7 @@ function GDKPd:FinishAuction(link)
 			end
 		else
 			SendChatMessage("Auction finished. No bids recieved.","RAID")
-			self:UpdateItemInPot(aucitem, 0, "unassigned", self.curAuction.index)
+			self:UpdateItemInPot(aucitem, 0, "disenchant", self.curAuction.index)
 		end
 		self.curAuction.bidders:Release()
 		table.wipe(self.curAuction)
@@ -4630,7 +4630,7 @@ GDKPd:SetScript("OnEvent", function(self, event, ...)
 			--if 1 < itemRarity then 
 			--GDKPd_Debug("itemlink: "..itemLink.. "playerName: " ..playerName.. " itemRarity: " ..itemRarity.. " GDKPd.opt.minQualityTracking: " ..GDKPd.opt.minQualityTracking)
 			if GDKPd.opt.minQualityTracking <= itemRarity then 
-				self:AddItemToPot(itemLink, 0, playerName)
+				self:AddItemToPot(itemLink, 0, "unassigned")
 			else
 				--GDKPd_Debug("Item Rarity is too low to track")
 			end

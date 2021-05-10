@@ -420,7 +420,7 @@ do
 			--check for time sort
 			--call it some function
 			GDKPd_Debug("ST:CompareSort: a1: " ..a1.." b1: " ..b1);
-			a1, b1 = stringTimetonumberTime(a1), stringTimetonumberTime(b1);
+			a1, b1 = ST2_stringTimetonumberTime(a1), ST2_stringTimetonumberTime(b1);
 			GDKPd_Debug("ST:CompareSort: after stringTime: a1: " ..a1.." b1: " ..b1);
 		end
 		if (groupby == nil) or not groupby then
@@ -455,43 +455,44 @@ do
 			return stsortbyclass(a1, b1, a2, b2, direction)
 		end
 	end
-	function stringTimetonumberTime(sText1)
+	function ST2_stringTimetonumberTime(sText1)
 		local retVal1
 		local cIndex = strfind(sText1, ":")
-		GDKPd_Debug("ST:stringTimetonumberTime: Called!");
-		GDKPd_Debug("ST:stringTimetonumberTime: sText: " ..sText1);
-		if (cIndex) then GDKPd_Debug("ST:stringTimetonumberTime: cIndex: " ..cIndex);end
+		GDKPd_Debug("ST:ST2_stringTimetonumberTime: Called!");
+		GDKPd_Debug("ST:ST2_stringTimetonumberTime: sText: " ..sText1);
+		if strlen(sText1) > 7 then cIndex = nil end
+		if (cIndex) then GDKPd_Debug("ST:ST2_stringTimetonumberTime: cIndex: " ..cIndex);end
 		if not cIndex then
 			--[[ local isNum = string.find(sText1, "%d")
 			if not isNum then 
-				GDKPd_Debug("ST:stringTimetonumberTime: sText1: " ..sText1);
+				GDKPd_Debug("ST:ST2_stringTimetonumberTime: sText1: " ..sText1);
 				return sText1;
 			else
 				local subText = string.sub(sText1,1,isNum-1)
-				GDKPd_Debug("ST:stringTimetonumberTime: subText: " ..subText)
+				GDKPd_Debug("ST:ST2_stringTimetonumberTime: subText: " ..subText)
 				retVal1 = tonumber(subText)-- + tonumber(string.sub(sText1,isNum))
-				GDKPd_Debug("ST:stringTimetonumberTime: retVal1: " ..tostring(retVal1));
+				GDKPd_Debug("ST:ST2_stringTimetonumberTime: retVal1: " ..tostring(retVal1));
 				return retVal1
 			end ]]
 			return sText1
 		end
-		retVal1 = cStrTimetoInt(sText1,cIndex)
-		GDKPd_Debug("ST:stringTimetonumberTime: retVal1: " ..retVal1);
+		retVal1 = ST2_cStrTimetoInt(sText1,cIndex)
+		GDKPd_Debug("ST:ST2_stringTimetonumberTime: retVal1: " ..retVal1);
 		return retVal1;
 	end
-	function cStrTimetoInt(sText, cIndex)
-		GDKPd_Debug("cStrTimetoInt: called! ");
+	function ST2_cStrTimetoInt(sText, cIndex)
+		GDKPd_Debug("ST2_cStrTimetoInt: called! ");
 		local sH, sM;
 		sH = string.sub(sText,1,cIndex-1)
 		if not sH or sH == "" then
 			sH = 0;
 		end
-		GDKPd_Debug("ST:stringTimetonumberTime: sH: " ..sH);
+		GDKPd_Debug("ST:ST2_stringTimetonumberTime: sH: " ..sH);
 		sM = string.sub(sText,cIndex+1)
 		if not sM or sM == "" then
 			sM = 0
 		end
-		--GDKPd_Debug("ST:stringTimetonumberTime: sM: " ..sM);
+		--GDKPd_Debug("ST:ST2_stringTimetonumberTime: sM: " ..sM);
 		return (tonumber(sH)*60) + tonumber(sM);
 	end
 
@@ -745,7 +746,7 @@ do
 	end
 
 	
-	function doOnClick(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, disabledeselect, groupby, ...)
+	function ST2_doOnClick(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, disabledeselect, groupby, ...)
 		--GDKPd_Debug("ST_doOnClick fired!");
 		st = table;
 		if button == "LeftButton" then	-- LS: only handle on LeftButton click (right passes thru)
@@ -870,7 +871,7 @@ do
 			end,
 			["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, ...)		-- LS: added "button" argument
 				--GDKPd_Debug("ST_Onclick fired!");
-				doOnClick(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, ...);
+				ST2_doOnClick(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, ...);
 				return true;
 				--[[ if button == "LeftButton" then	-- LS: only handle on LeftButton click (right passes thru)
 					if not (row or realrow) then
