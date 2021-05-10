@@ -733,7 +733,8 @@ function status.BossLootTable:getInfofromSelection()
 	local playerName = status.BossLootTable:GetCell(loot_select, 4)
 	local bid = status.BossLootTable:GetCell(loot_select, 5)
 	local itemName = cleanString(status.BossLootTable:GetCell(loot_select, 3))
-	return link, lootnum, cleanString(playerName, true), bid, itemName
+	local done = status.BossLootTable:GetCell(loot_select, 8)
+	return link, lootnum, cleanString(playerName, true), bid, itemName, done
 end
 
 --BOSS LOOT FILTER
@@ -833,12 +834,12 @@ function status.removeLoot:removeSelectedLoot(reset)
 		SendAddonMessage("GDKPD MANADJ",tostring(tonumber(bid) or 0),"WHISPER",playerName)
 		GDKPd.balance:Update()
 	end
+	if GDKPd.opt.linkBalancePot then
+		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-(tonumber(bid) or 0)
+	end
 	if not(reset) then 
 		tremove(GDKPd_PotData.curPotHistory, lootnum)
 		status.BossLootTable:ClearSelection()
-	end
-	if GDKPd.opt.linkBalancePot then
-		GDKPd_PotData.potAmount = GDKPd_PotData.potAmount-(tonumber(bid) or 0)
 	end
 	--GDKPd:BossLootTableUpdate()
 	status:Update()
@@ -864,6 +865,15 @@ status.linkLootFont:SetText("Link")
 GDKPd:ttRegister(status.linkLoot, "Link the selected item in raid chat")
 status.linkLoot:SetFontString(status.linkLootFont)
 status.linkLoot:SetPoint("LEFT", status.editLoot, "RIGHT", 3, 0 );
+status.linkLoot:SetScript("OnClick", function() GDKPd:linkLoot_click(); end);
+
+---------------------------
+--linkLoot onclick event --
+---------------------------
+function GDKPd:linkLoot_click()
+	local itemlink = status.BossLootTable:getInfofromSelection()
+	GDKPd:LootAnnounce("Raid", itemlink)
+end
 
 --BID LOOT BUTTON
 status.bidLoot = CreateFrame("Button", nil, status, "UIPanelButtonTemplate")
@@ -889,11 +899,17 @@ function GDKPd:bidLoot_click()
     local lootnum = status.BossLootTable:GetCell(loot_select, 1);
 	local link = GDKPd_PotData.curPotHistory[lootnum]["item"] ]]
 	GDKPd_Debug("bidloot_click: staring auction")
-	local link, lootnum, playerName, bid = status.BossLootTable:getInfofromSelection()
+	local link, lootnum, playerName, bid, done = status.BossLootTable:getInfofromSelection()
 	-- if the item has a bid then we need to reset the pot and distribution before doing the auction.
 	if (tonumber(bid) ~= 0) then 
 	-- reset pot and distribution
 		status.removeLoot:removeSelectedLoot(true)
+	else
+		--set done back to false
+		if playerName == "disenchant" then 
+			--reset done stats
+			GDKPd:UpdateItemInPot(link, bid, playerName, lootnum, false)
+		end
 	end
 	status.bidLoot:Disable()
 	GDKPd:DoAuction(link, lootnum)
@@ -3019,7 +3035,7 @@ function GDKPd:AddItemToPot(link, bid, bname, select)
 	end 
 end
 
-function GDKPd:UpdateItemInPot(link, bid, bname, index)
+function GDKPd:UpdateItemInPot(link, bid, bname, index, done)
 	--add item into GDKPd_PotData.curPotHistory here.
 	--tinsert(GDKPd_PotData.curPotHistory, {itemName=itemName, itemId=itemId, itemColor=itemColor, item=itemlink, bid=bid1, name=name, index=GDKPd.itemCount, ltime=time()})
 	GDKPd_Debug("UpdateItemInPot: link: " ..link)
@@ -3028,6 +3044,12 @@ function GDKPd:UpdateItemInPot(link, bid, bname, index)
 	GDKPd_Debug("UpdateItemInPot: index: " ..index)
 	GDKPd_PotData.curPotHistory[index]["bid"]=bid
 	GDKPd_PotData.curPotHistory[index]["name"]=bname
+	if done then 
+		GDKPd_PotData.curPotHistory[index]["traded"]=done
+	else
+		GDKPd_PotData.curPotHistory[index]["traded"]=false
+	end
+	
 	status:Update()
 end
 
@@ -3100,7 +3122,7 @@ function GDKPd:FinishAuction(link)
 				SendChatMessage(("Auction finished for %s. No bids recieved."):format(link),"RAID")
 				GDKPd_Debug("FinishAuction: about to updateIteminPot")
 				GDKPd_Debug("FinishAuction: link: "..link.." bid: 0 bidder: unassigned self.curAuction.index: " ..self.curAuction.index)
-				GDKPd:UpdateItemInPot(link, 0, "disenchant", self.curAuction.index)
+				GDKPd:UpdateItemInPot(link, 0, "disenchant", self.curAuction.index, true)
 			end
 			aucdata:Release()
 		end
@@ -3161,7 +3183,7 @@ function GDKPd:FinishAuction(link)
 			end
 		else
 			SendChatMessage("Auction finished. No bids recieved.","RAID")
-			self:UpdateItemInPot(aucitem, 0, "disenchant", self.curAuction.index)
+			self:UpdateItemInPot(aucitem, 0, "disenchant", self.curAuction.index, true)
 		end
 		self.curAuction.bidders:Release()
 		table.wipe(self.curAuction)
@@ -5326,6 +5348,92 @@ function GDKPd:calculateLootTimeLeft (timeLooted)
     end
 	return lootTime
 end
+
+function GDKPd:GetTokenLoot(item)
+	local itemName, itemLink, rarity, level, _, _, _, _, equipLoc = GetItemInfo(item)
+	--local sName, sLink, iRarity, iLevel, iMinLevel, sType, sSubType, iStackCount = GetItemInfo(itemLink);
+	local retVal = {};
+	local SF_TOKEN_DATA = {
+		--Token list
+		["Vek'lor's Diadem"] = {21387, 21360, 21353, 21366},
+		["Vek'nilash's Circlet"] = {21329, 21337, 21347, 21348},
+		["Imperial Qiraji Armaments"] = {21242, 21244, 21272, 21269},
+		["Imperial Qiraji Regalia"] = {21268, 21273, 21275},
+		["Qiraji Bindings of Command"] = {21333, 21330, 21359, 21361, 21349, 21350, 21365, 21367},
+		["Qiraji Bindings of Dominance"] = {21388, 21391, 21338, 21335, 21344, 21345, 21355, 21354},
+		["Ouro's Intact Hide"] = {21332, 21362, 21346, 21352},
+		["Skin of the Great Sandworm"] = {21390, 21336, 21356, 21368},
+		["Carapace of the Old God"] = {21389, 21331, 21364, 21370},
+		["Husk of the Old God"] = {21334, 21343, 21357, 21351},
+		["Eye of C'Thun"] = {21712, 21710, 21709},
+		["Head of Nefarian"] = {19383, 19384, 19366},
+	  }
+	
+	if (SF_TOKEN_DATA[itemName]) then
+	  for i = 1, table.maxn(SF_TOKEN_DATA[itemName]) do
+		local tItemName = SF_TOKEN_DATA[itemName][i];
+		if (tItemName) then
+		  local intID = tonumber(tItemName);
+		  local itemName1, itemLink1, rarity1, level1, _, _, _, _, equipLoc = GetItemInfo(intID);
+		  if (itemLink1) then 
+			GDKPd_Debug("GetTokenLoot:: GetTokenLoot: itemLink1: " ..itemLink1); 
+			tinsert(retVal, 1, itemLink1);
+		  else
+			GDKPd_Debug("GetTokenLoot:: GetTokenLoot: itemLink1: NIL"); 
+		  end 
+		end 
+	  end
+	end
+	return retVal;
+  end
+
+  function GDKPd:LootAnnounce(messageType, loot)
+    GDKPd_Debug("LootAnnouce:called!");
+    local tTokens = GDKPd:GetTokenLoot(loot);
+    local rwMessage;
+	--["RaidLinkMessage"] = "%s",
+    
+    if messageType == "Raid" then
+        rwMessage = string.format("%s", loot);
+        SendChatMessage(rwMessage, messageType);
+    else
+        return;
+    end 
+    local iCount = table.maxn(tTokens);
+    if iCount > 0 then
+        GDKPd_Debug("LootAnnouce: processing tokenloot list");
+		--["RaidTokenMessage"] = "This is the quest item for %s",
+	    --["RaidTokenMessageCont"] = "and %s",
+        local tokenLootList = "";
+        for i = 1, iCount do
+            if (tTokens[i]) then
+                tokenLootList = tokenLootList ..tTokens[i];
+                --MRT_Debug("LootAnnouce: tTokens[i]:  " ..tTokens[i]);
+            else
+                tokenLootList = tokenLootList .."";
+                --MRT_Debug("LootAnnouce: tTokens[i]:NIL");
+            end
+            if (i % 4) == 0 then
+                if i == 4 then 
+                    rwMessage = string.format("This is the quest item for %s", tokenLootList);
+                else
+                    rwMessage = string.format("and %s", tokenLootList);
+                end
+                tokenLootList = "";
+                SendChatMessage(rwMessage, "Raid");
+            end
+        end
+        if tokenLootList ~= "" then
+            if iCount < 4 then
+                rwMessage = string.format("This is the quest item for %s", tokenLootList);
+            else
+                rwMessage = string.format("and %s", tokenLootList);
+            end
+            SendChatMessage(rwMessage, "Raid");
+        end
+    end
+end
+
 ------------------------
 --  helper functions  --
 ------------------------
