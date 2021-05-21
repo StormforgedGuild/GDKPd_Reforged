@@ -117,7 +117,7 @@ do
 		for i = 1, num do
 			local row = self.rows[i];
 			if not row then
-				row = CreateFrame("Button", self.frame:GetName().."Row"..i, self.frame);
+				row = CreateFrame("Button", self.frame:GetName().."Row"..i, self.frame, "BackdropTemplate");
 				row:SetFrameStrata("MEDIUM");
 				row:SetFrameLevel(2);
 				self.rows[i] = row;
@@ -137,7 +137,7 @@ do
 			for j = 1, #self.cols do
 				local col = row.cols[j];
 				if not col then
-					col = CreateFrame("Button", row:GetName().."col"..j, row);
+					col = CreateFrame("Button", row:GetName().."col"..j, row, "BackdropTemplate");
 					-- old code col.text = row:CreateFontString(col:GetName().."text", "OVERLAY", "GameFontHighlightSmall");
 					col.text = row:CreateFontString(col:GetName().."text", "BORDER", "GameFontHighlightSmall");
 					--col:SetFrameStrata("MEDIUM");
@@ -460,7 +460,7 @@ do
 		local cIndex = strfind(sText1, ":")
 		GDKPd_Debug("ST:ST2_stringTimetonumberTime: Called!");
 		GDKPd_Debug("ST:ST2_stringTimetonumberTime: sText: " ..sText1);
-		if strlen(sText1) > 7 then cIndex = nil end
+		if strlen(sText1) > 6 then cIndex = nil end
 		if (cIndex) then GDKPd_Debug("ST:ST2_stringTimetonumberTime: cIndex: " ..cIndex);end
 		if not cIndex then
 			--[[ local isNum = string.find(sText1, "%d")
@@ -804,7 +804,7 @@ do
 	function ScrollingTable:CreateST(cols, numRows, rowHeight, highlight, parent)
 		local st = {};
 		self.framecount = self.framecount or 1;
-		local f = CreateFrame("Frame", "ScrollTable2" .. self.framecount, parent or UIParent);
+		local f = CreateFrame("Frame", "ScrollTable2" .. self.framecount, parent or UIParent, "BackdropTemplate");
 		--f:SetFrameStrata("MEDIUM");
 		self.framecount = self.framecount + 1;
 		st.showing = true;

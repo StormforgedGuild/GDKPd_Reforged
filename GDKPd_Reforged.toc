@@ -1,4 +1,4 @@
-## Interface: 11305
+## Interface: 20501
 ## Title: GDKPd_Reforged
 ## Notes: Simplifies GDKP bidding processes
 ## Author: poptix, Keaarori, stolenlegacy

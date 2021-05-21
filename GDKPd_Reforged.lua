@@ -555,7 +555,7 @@ anchor.movetx.text:SetAllPoints()
 -------------------------------------------------------------------------------------------
 -- STATUS FRAME
 -------------------------------------------------------------------------------------------
-GDKPd.status = CreateFrame("Frame", "GDKPd_Status", UIParent)
+GDKPd.status = CreateFrame("Frame", "GDKPd_Status", UIParent, "BackdropTemplate")
 local status = GDKPd.status
 status:SetSize(604, 550)
 status:Hide()
@@ -1614,7 +1614,7 @@ end
 --------------------------------------------------------------------
 --- HISTORY FRAME
 --------------------------------------------------------------------
-GDKPd.history = CreateFrame("Frame", "GDKPd_History", UIParent)
+GDKPd.history = CreateFrame("Frame", "GDKPd_History", UIParent, "BackdropTemplate")
 local history = GDKPd.history
 history:SetSize(200,95)
 history:Hide()
@@ -1764,7 +1764,7 @@ function history:Update()
 	end
 	self:SetHeight(size)
 end
-GDKPd.itemsettings = CreateFrame("Frame", "GDKPd_ItemSettings", UIParent)
+GDKPd.itemsettings = CreateFrame("Frame", "GDKPd_ItemSettings", UIParent, "BackdropTemplate")
 local itemsettings = GDKPd.itemsettings
 itemsettings:SetWidth(250)
 itemsettings:Hide()
@@ -2005,7 +2005,7 @@ itemsettings.hide:SetPoint("BOTTOM", 0, 15)
 itemsettings.hide:SetText(L["Hide"])
 itemsettings.hide:SetScript("OnClick", function() itemsettings:Hide() end)
 itemsettings.scroll:SetPoint("BOTTOMRIGHT", itemsettings.hide, "TOPRIGHT", 0, 10)
-GDKPd.itemLevels = CreateFrame("Frame", "GDKPd_ItemLevels", UIParent)
+GDKPd.itemLevels = CreateFrame("Frame", "GDKPd_ItemLevels", UIParent, "BackdropTemplate")
 local itemlevels = GDKPd.itemLevels
 itemlevels:SetWidth(250)
 itemlevels:Hide()
@@ -2213,7 +2213,7 @@ function itemlevels:Update()
 	end
 	self:SetHeight(height)
 end
-GDKPd.version = CreateFrame("Frame", "GDKPd_Versions", UIParent)
+GDKPd.version = CreateFrame("Frame", "GDKPd_Versions", UIParent, "BackdropTemplate")
 local version = GDKPd.version
 version:SetSize(200,85)
 version:Hide()
@@ -2396,7 +2396,7 @@ function GDKPd:MailBalanceGold(targetName)
 	GDKPd_PotData.playerBalance[targetName] = 0
 	self.balance:Update()
 end
-GDKPd.balance = CreateFrame("Frame", "GDKPd_PlayerBalance", status)
+GDKPd.balance = CreateFrame("Frame", "GDKPd_PlayerBalance", status, "BackdropTemplate")
 local balance = GDKPd.balance
 balance:SetSize(200, 95)
 balance:SetBackdrop({
@@ -2573,7 +2573,7 @@ function balance:Update()
 	end
 	self:Hide()
 end
-GDKPd.playerBalance = CreateFrame("Frame", "GDKPd_PlayerBalance", UIParent)
+GDKPd.playerBalance = CreateFrame("Frame", "GDKPd_PlayerBalance", UIParent, "BackdropTemplate")
 local playerBalance = GDKPd.playerBalance
 playerBalance:SetSize(200, 95)
 playerBalance:SetBackdrop({
@@ -2692,7 +2692,7 @@ function playerBalance:Update()
 	self:UpdateVisibility()
 	status:Update()
 end
-GDKPd.exportframe = CreateFrame("Frame", "GDKPd_Export", UIParent)
+GDKPd.exportframe = CreateFrame("Frame", "GDKPd_Export", UIParent, "BackdropTemplate")
 local export = GDKPd.exportframe
 export:Hide()
 export:SetBackdrop({
@@ -3260,7 +3260,7 @@ function GDKPd:GetUnoccupiedFrame()
 		end
 		c=c+1
 	end
-	local f = CreateFrame("Frame", "GDKPdBidFrame"..c, UIParent)
+	local f = CreateFrame("Frame", "GDKPdBidFrame"..c, UIParent, "BackdropTemplate")
 	f:SetMovable(true)
 	f:SetScript("OnMouseDown", function(self)
 		self:StartMoving()
